@@ -1,0 +1,30 @@
+{
+  "name" : "Workflow 1",
+  "icon" : "Gears.png",
+  "destinationName" : "Archives",
+  "destinationUrl" : "file:///Users/richardrodgers/handbag",
+  "bagNameGenerator" : "transfer-${dfmt(YY-MM-DD)}.${seq}",
+  "packageFormat": "zip",
+  "metadata": [
+    {
+      "name" : "field1",
+      "presetValue": "Preset foo"
+    },
+    {
+      "name": "field2",
+      "defaultValue": "Preset foobar"
+    },
+    {
+      "name": "field3",
+      "optional": true,
+      "defaultValue": "Default foobar",
+      "sticky": true
+    },
+    {
+      "name": "field4",
+      "optional": true,
+      "valueList": ["value a", "value b"],
+      "sticky": true
+    }
+  ]
+}

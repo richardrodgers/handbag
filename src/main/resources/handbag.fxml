@@ -1,0 +1,40 @@
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.controlsfx.control.PropertySheet?>
+
+<GridPane fx:controller="edu.mit.lib.handbag.Controller"
+          xmlns:fx="http://javafx.com/fxml" alignment="center" hgap="10" vgap="10">
+    <VBox>
+        <Separator/>
+        <HBox>
+            <VBox>
+                <Label fx:id="workflowLabel" text="Workflow"/>
+                <ChoiceBox fx:id="workflowChoiceBox"/>
+            </VBox>
+            <Separator/>
+            <VBox>
+                <Label fx:id="bagLabel" text="Bag"/>
+                <Label fx:id="bagSizeLabel" text="[empty]"/>
+                <!-- <ProgressBar/>  -->
+            </VBox>
+            <Separator/>
+            <Button fx:id="sendButton" text="Destination"/>
+            <Button fx:id="trashButton" text="Trash"/>
+        </HBox>
+        <Separator/>
+        <HBox>
+            <VBox>
+                <Label text="Payload"/>
+                <TreeView fx:id="payloadTreeView"/>
+            </VBox>
+            <Separator/>
+            <VBox>
+                <Label text="Metadata"/>
+                <PropertySheet fx:id="metadataPropertySheet"/>
+                <Label text="* = optional ! = sticky"/>
+                <!-- <ListView fx:id="metadataListView"/>  -->
+            </VBox>
+        </HBox>
+    </VBox>
+</GridPane>
