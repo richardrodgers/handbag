@@ -19,6 +19,7 @@ public class Workflow {
     private String icon;
     private String destinationName;
     private String destinationUrl;
+    private String destinationEmail;
     private String bagNameGenerator;
     private String packageFormat;
     private List<MetadataSpec> metadata;
@@ -56,6 +57,14 @@ public class Workflow {
 
     public void setDestinationUrl(String destinationUrl) {
         this.destinationUrl = destinationUrl;
+    }
+
+    public String getDestinationEmail() {
+        return destinationEmail;
+    }
+
+    public void setDestinationEmail(String destinationEmail) {
+        this.destinationEmail = destinationEmail;
     }
 
     public String getBagNameGenerator() {

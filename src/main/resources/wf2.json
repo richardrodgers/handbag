@@ -3,6 +3,7 @@
   "icon" : "SiteMap.png",
   "destinationName" : "CPS Services",
   "destinationUrl" : "file:///Users/richardrodgers/handbag",
+  "destinationEmail" : "hbailey@mit.edu",
   "bagNameGenerator" : "transfer-${dfmt(YY-MM-DD)}.${seq}",
   "packageFormat": "zip",
   "metadata": [

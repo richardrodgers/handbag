@@ -26,9 +26,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.mail.*;
+import javax.mail.internet.*;
+import javax.activation.*;
 
 import org.controlsfx.control.PropertySheet;
 
@@ -210,6 +215,8 @@ public class Controller {
             } else {
                 // send to URL - TODO
             }
+            SendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
+                    "hbailey@mit.edu", bagLabel.getText());
             reset(true);
         } catch (IOException | URISyntaxException exp) {}
     }
@@ -308,6 +315,27 @@ public class Controller {
         bagName = "transfer." + counter++;
     }
 
+    private void SendEmail(String to, String from, String bag) {
+        String host = "outgoing.mit.edu";
+        Properties properties = System.getProperties();
+        properties.setProperty("mail.smtp.host", host);
+        Session session = Session.getDefaultInstance(properties);
+        String dest = workflowChoiceBox.getValue().getDestinationName();
+        try {
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO,
+                    new InternetAddress(to));
+            message.setSubject("Bag " + bag + " has been submitted to " + dest);
+            message.setText("Message contents (do we want to include additional"
+                    + " information here?)");
+
+            Transport.send(message);
+        } catch (MessagingException mex) {
+            mex.printStackTrace();
+        }
+    }
+    
     static class PathRef {
         private String relPath;
         private Path path;

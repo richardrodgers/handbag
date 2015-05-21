@@ -1,9 +1,9 @@
 {
-  "name" : "Workflow 1",
+  "name" : "Helen's Workflow",
   "icon" : "Gears.png",
-  "destinationName" : "Archives",
+  "destinationName" : "Helen's computer",
   "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
-  "destinationEmail" : "rrodgers@mit.edu",
+  "destinationEmail" : "hbailey@mit.edu",
   "bagNameGenerator" : "transfer-${dfmt(YY-MM-DD)}.${seq}",
   "packageFormat": "zip",
   "metadata": [
