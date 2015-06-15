@@ -1,31 +1,25 @@
 {
-  "name" : "Helen's Workflow",
+  "name" : "Helen's Test Workflow",
   "icon" : "Gears.png",
   "destinationName" : "Helen's computer",
   "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
   "destinationEmail" : "hbailey@mit.edu",
   "bagNameGenerator" : "transfer-${dfmt(YY-MM-DD)}.${seq}",
   "packageFormat": "zip",
+  "checksumType": "md5",
   "metadata": [
     {
-      "name" : "field1",
-      "presetValue": "Preset foo"
-    },
-    {
-      "name": "field2",
-      "defaultValue": "Preset foobar"
-    },
-    {
-      "name": "field3",
-      "optional": true,
-      "defaultValue": "Default foobar",
+      "name" : "Bag Creator",
+      "presetValue": "email@mit.edu",
       "sticky": true
     },
     {
-      "name": "field4",
-      "optional": true,
-      "valueList": ["value a", "value b"],
-      "sticky": true
+      "name": "dc.title",
+      "defaultValue": "Title"
+    },
+    {
+      "name": "dc.author",
+      "defaultValue": "Author"
     }
   ]
 }

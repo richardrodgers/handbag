@@ -22,6 +22,7 @@ public class Workflow {
     private String destinationEmail;
     private String bagNameGenerator;
     private String packageFormat;
+    private String checksumType;
     private List<MetadataSpec> metadata;
 
     public Workflow() {
@@ -81,6 +82,14 @@ public class Workflow {
 
     public void setPackageFormat(String packageFormat) {
         this.packageFormat = packageFormat;
+    }
+    
+    public String getChecksumType() {
+        return checksumType;
+    }
+
+    public void setChecksumType(String checksumType) {
+        this.checksumType = checksumType;
     }
 
     public List<MetadataSpec> getMetadata() {

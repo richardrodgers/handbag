@@ -190,6 +190,7 @@ public class Controller {
     private void transmitBag() {
         try {
             URI destUri = new URL(workflowChoiceBox.getValue().getDestinationUrl()).toURI();
+            String creatorEmail = null;
             String pkgFormat = workflowChoiceBox.getValue().getPackageFormat();
             boolean localDest = destUri.getScheme().startsWith("file");
             Path destDir = Paths.get(destUri);
@@ -207,6 +208,9 @@ public class Controller {
             for (PropertySheet.Item mdItem : metadataPropertySheet.getItems()) {
                 MetadataItem item = (MetadataItem)mdItem;
                 if (item.getValue() != null && item.getValue().length() > 0) {
+                    if ("Bag Creator".equals(item.getRealName())) {
+                        creatorEmail = item.getValue();
+                    }
                     filler.metadata(item.getRealName(), item.getValue());
                 }
             }
@@ -216,7 +220,7 @@ public class Controller {
                 // send to URL - TODO
             }
             sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
-                    "hbailey@mit.edu", bagLabel.getText());
+                    "no-reply@mit.edu", creatorEmail, bagLabel.getText());
             reset(true);
         } catch (IOException | URISyntaxException exp) {}
     }
@@ -315,7 +319,7 @@ public class Controller {
         bagName = "transfer." + counter++;
     }
 
-    private void sendEmail(String to, String from, String bag) {
+    private void sendEmail(String to, String from, String cc, String bag) {
         String host = "outgoing.mit.edu";
         Properties properties = System.getProperties();
         properties.setProperty("mail.smtp.host", host);
@@ -326,6 +330,8 @@ public class Controller {
             message.setFrom(new InternetAddress(from));
             message.addRecipient(Message.RecipientType.TO,
                     new InternetAddress(to));
+            message.addRecipient(Message.RecipientType.CC, new InternetAddress(
+            cc));
             message.setSubject("Bag " + bag + " has been submitted to " + dest);
             message.setText("Message contents (do we want to include additional"
                     + " information here?)");
