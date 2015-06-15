@@ -215,7 +215,7 @@ public class Controller {
             } else {
                 // send to URL - TODO
             }
-            SendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
+            sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
                     "hbailey@mit.edu", bagLabel.getText());
             reset(true);
         } catch (IOException | URISyntaxException exp) {}
@@ -315,7 +315,7 @@ public class Controller {
         bagName = "transfer." + counter++;
     }
 
-    private void SendEmail(String to, String from, String bag) {
+    private void sendEmail(String to, String from, String bag) {
         String host = "outgoing.mit.edu";
         Properties properties = System.getProperties();
         properties.setProperty("mail.smtp.host", host);
