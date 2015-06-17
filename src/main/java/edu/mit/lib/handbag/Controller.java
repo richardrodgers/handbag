@@ -40,6 +40,9 @@ import org.controlsfx.control.PropertySheet;
 import com.fasterxml.jackson.jr.ob.JSON;
 
 import edu.mit.lib.bagit.Filler;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 
 public class Controller {
 
@@ -65,6 +68,7 @@ public class Controller {
     private String agent = "anon";
     private Map<String, String> appProps;
     private StringBuilder relPathSB;
+    private StringBuilder emailBody;
 
     public void setAgent(String agent) {
         this.agent = agent;
@@ -214,13 +218,20 @@ public class Controller {
                     filler.metadata(item.getRealName(), item.getValue());
                 }
             }
+            // add manifest contents to email body
+            emailBody = new StringBuilder();
+            emailBody.append("Bag contents:\n");
+            filler.getManifest().forEach((string) -> { 
+                emailBody.append(string).append("\n");
+            });
+            
             if (localDest) {
                 filler.toPackage(pkgFormat);
             } else {
                 // send to URL - TODO
             }
             sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
-                    "no-reply@mit.edu", creatorEmail, bagLabel.getText());
+                    "no-reply@mit.edu", creatorEmail, bagLabel.getText(), emailBody.toString());
             reset(true);
         } catch (IOException | URISyntaxException exp) {}
     }
@@ -319,7 +330,7 @@ public class Controller {
         bagName = "transfer." + counter++;
     }
 
-    private void sendEmail(String to, String from, String cc, String bag) {
+    private void sendEmail(String to, String from, String cc, String bag, String body) {
         String host = "outgoing.mit.edu";
         Properties properties = System.getProperties();
         properties.setProperty("mail.smtp.host", host);
@@ -332,9 +343,8 @@ public class Controller {
                     new InternetAddress(to));
             message.addRecipient(Message.RecipientType.CC, new InternetAddress(
             cc));
-            message.setSubject("Bag " + bag + " has been submitted to " + dest);
-            message.setText("Message contents (do we want to include additional"
-                    + " information here?)");
+            message.setSubject("Bag " + bag + " has been submitted to " + dest + " by " + cc);
+            message.setText(body);
 
             Transport.send(message);
         } catch (MessagingException mex) {
