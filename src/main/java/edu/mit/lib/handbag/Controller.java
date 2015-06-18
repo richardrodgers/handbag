@@ -43,6 +43,7 @@ import edu.mit.lib.bagit.Filler;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 
 public class Controller {
 
@@ -50,6 +51,7 @@ public class Controller {
     @FXML private ChoiceBox<Workflow> workflowChoiceBox;
     @FXML private Label bagLabel;
     @FXML private Label bagSizeLabel;
+    @FXML private Label bagCountLabel;
     @FXML private Button sendButton;
     @FXML private Button trashButton;
     @FXML private TreeView<PathRef> payloadTreeView;
@@ -218,7 +220,7 @@ public class Controller {
                     filler.metadata(item.getRealName(), item.getValue());
                 }
             }
-            // add manifest contents to email body
+            // add bag size and manifest contents to email body
             emailBody = new StringBuilder();
             emailBody.append("Bag size: ").append(bagSizeLabel.getText()).append("\n");
             emailBody.append("Bag contents:\n");
@@ -232,7 +234,8 @@ public class Controller {
                 // send to URL - TODO
             }
             sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
-                    "no-reply@mit.edu", creatorEmail, bagLabel.getText(), emailBody.toString());
+                    "no-reply@mit.edu", creatorEmail, bagName, emailBody.toString());
+            counter++;
             reset(true);
         } catch (IOException | URISyntaxException exp) {}
     }
@@ -267,6 +270,7 @@ public class Controller {
         bagSizeLabel.setText("[empty]");
         generateBagName(workflowChoiceBox.getValue().getBagNameGenerator());
         bagLabel.setText(bagName);
+        bagCountLabel.setText(counter + " bags transmitted");
     }
 
     // check and update disabled state of buttons based on application state
@@ -328,7 +332,11 @@ public class Controller {
     }
 
     private void generateBagName(String generator) {
-        bagName = "transfer." + counter++;
+        Date timestamp = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+        String ts = sdf.format(timestamp);
+        bagName = generator + "_" + ts;
+//        bagName = generator + "-" + counter++;
     }
 
     private void sendEmail(String to, String from, String cc, String bag, String body) {

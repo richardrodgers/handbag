@@ -35,6 +35,9 @@
                 <Label text="* = optional ! = sticky"/>
                 <!-- <ListView fx:id="metadataListView"/>  -->
             </VBox>
+            <VBox>
+                <Label fx:id="bagCountLabel" text="0 bags transmitted"/>
+            </VBox>
         </HBox>
     </VBox>
 </GridPane>

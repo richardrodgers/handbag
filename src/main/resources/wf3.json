@@ -4,13 +4,13 @@
   "destinationName" : "Helen's computer",
   "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
   "destinationEmail" : "hbailey@mit.edu",
-  "bagNameGenerator" : "transfer-${dfmt(YY-MM-DD)}.${seq}",
+  "bagNameGenerator" : "transfer",
   "packageFormat": "zip",
   "checksumType": "md5",
   "metadata": [
     {
       "name" : "Bag Creator",
-      "presetValue": "email@mit.edu",
+      "presetValue": "hbailey@mit.edu",
       "sticky": true
     },
     {
