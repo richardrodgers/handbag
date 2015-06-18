@@ -220,6 +220,7 @@ public class Controller {
             }
             // add manifest contents to email body
             emailBody = new StringBuilder();
+            emailBody.append("Bag size: ").append(bagSizeLabel.getText()).append("\n");
             emailBody.append("Bag contents:\n");
             filler.getManifest().forEach((string) -> { 
                 emailBody.append(string).append("\n");
