@@ -237,6 +237,7 @@ public class Controller {
             sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
                     "no-reply@mit.edu", creatorEmail, bagName, emailBody.toString());
             
+            // popup notification of successful bag transmission
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Information Dialog");
             alert.setHeaderText(null);
@@ -246,7 +247,13 @@ public class Controller {
             
             counter++;
             reset(true);
-        } catch (IOException | URISyntaxException exp) {}
+        } catch (IOException | URISyntaxException exp) {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Information Dialog");
+            alert.setHeaderText(null);
+            alert.setContentText("Bag submission error");
+            alert.showAndWait();
+        }
     }
 
     // reset payload and metadata to ready state (respecting stickiness if requested)

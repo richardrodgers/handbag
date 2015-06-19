@@ -1,12 +1,16 @@
 {
-  "name" : "Workflow 2",
+  "name" : "Helen's Test Workflow 1",
   "icon" : "SiteMap.png",
-  "destinationName" : "CPS Services",
+  "destinationName" : "Richard's Computer",
   "destinationUrl" : "file:///Users/richardrodgers/handbag",
   "destinationEmail" : "hbailey@mit.edu",
-  "bagNameGenerator" : "transfer-${dfmt(YY-MM-DD)}.${seq}",
+  "bagNameGenerator" : "transfer",
   "packageFormat": "zip",
   "metadata": [
+    {
+      "name" : "Bag-Creator",
+      "sticky": true
+    },
     {
       "name" : "field7",
       "optional": true,
