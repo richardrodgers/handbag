@@ -44,6 +44,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import javafx.scene.control.Alert.AlertType;
 
 public class Controller {
 
@@ -196,7 +197,7 @@ public class Controller {
     private void transmitBag() {
         try {
             URI destUri = new URL(workflowChoiceBox.getValue().getDestinationUrl()).toURI();
-            String creatorEmail = null;
+            String creatorEmail = "";
             String pkgFormat = workflowChoiceBox.getValue().getPackageFormat();
             boolean localDest = destUri.getScheme().startsWith("file");
             Path destDir = Paths.get(destUri);
@@ -214,7 +215,7 @@ public class Controller {
             for (PropertySheet.Item mdItem : metadataPropertySheet.getItems()) {
                 MetadataItem item = (MetadataItem)mdItem;
                 if (item.getValue() != null && item.getValue().length() > 0) {
-                    if ("Bag Creator".equals(item.getRealName())) {
+                    if (item.getRealName().equals("Bag-Creator")) {
                         creatorEmail = item.getValue();
                     }
                     filler.metadata(item.getRealName(), item.getValue());
@@ -222,7 +223,7 @@ public class Controller {
             }
             // add bag size and manifest contents to email body
             emailBody = new StringBuilder();
-            emailBody.append("Bag size: ").append(bagSizeLabel.getText()).append("\n");
+            emailBody.append("Bag size: ").append(bagSizeLabel.getText()).append("\n\n");
             emailBody.append("Bag contents:\n");
             filler.getManifest().forEach((string) -> { 
                 emailBody.append(string).append("\n");
@@ -235,6 +236,14 @@ public class Controller {
             }
             sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
                     "no-reply@mit.edu", creatorEmail, bagName, emailBody.toString());
+            
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Information Dialog");
+            alert.setHeaderText(null);
+            alert.setContentText("Bag " + bagName + " successfully transmitted " + 
+                    "to " + workflowChoiceBox.getValue().getDestinationName() + ".");
+            alert.showAndWait();
+            
             counter++;
             reset(true);
         } catch (IOException | URISyntaxException exp) {}

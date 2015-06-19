@@ -9,16 +9,16 @@
   "checksumType": "md5",
   "metadata": [
     {
-      "name" : "Bag Creator",
+      "name" : "Bag-Creator",
       "presetValue": "hbailey@mit.edu",
       "sticky": true
     },
     {
-      "name": "dc.title",
+      "name": "DC-Title",
       "defaultValue": "Title"
     },
     {
-      "name": "dc.author",
+      "name": "DC-Author",
       "defaultValue": "Author"
     }
   ]
