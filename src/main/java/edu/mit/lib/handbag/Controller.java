@@ -66,6 +66,7 @@ public class Controller {
     private boolean gooeyMetadata = false;
     private boolean completeMetadata = false;
     private long bagSize = 0L;
+    private long maxBagSize = 10000000000L;
     private String bagName;
     private int counter = 0;
     private String agent = "anon";
@@ -103,6 +104,7 @@ public class Controller {
                         generateBagName(newSel.getBagNameGenerator());
                         bagLabel.setText(bagName);
                         sendButton.setText(newSel.getDestinationName());
+                        maxBagSize = newSel.getMaxBagSize();
                         setMetadataList(newSel);
                     }
                 }
@@ -152,15 +154,27 @@ public class Controller {
                                 }
                                 @Override
                                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                    payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef(relPathSB.toString(), file)));
                                     bagSize += Files.size(file);
-                                    return FileVisitResult.CONTINUE;
+                                    if (bagSize > maxBagSize) {
+                                        alert("Bag is too big.");
+                                        bagSize -= Files.size(file);
+                                        return FileVisitResult.TERMINATE;
+                                    } else {
+                                        payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef(relPathSB.toString(), file)));
+                                        return FileVisitResult.CONTINUE;
+                                    }
                                 }
                             });
                         } catch (IOException ioe) {}
                     } else {
-                        payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef("", dragFile.toPath())));
                         bagSize += dragFile.length();
+                        if (bagSize > maxBagSize) {
+                            alert("Bag is too big. Maximum bag size is " + scaledSize(maxBagSize, 0) + ".");
+                            bagSize -= dragFile.length();
+                            break;
+                        } else {
+                            payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef("", dragFile.toPath())));
+                        }
                     }
                 }
                 bagSizeLabel.setText(scaledSize(bagSize, 0));
@@ -236,23 +250,13 @@ public class Controller {
             }
             sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
                     "no-reply@mit.edu", creatorEmail, bagName, emailBody.toString());
-            
             // popup notification of successful bag transmission
-            Alert alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Information Dialog");
-            alert.setHeaderText(null);
-            alert.setContentText("Bag " + bagName + " successfully transmitted " + 
+            alert("Bag " + bagName + " successfully transmitted " + 
                     "to " + workflowChoiceBox.getValue().getDestinationName() + ".");
-            alert.showAndWait();
-            
             counter++;
             reset(true);
         } catch (IOException | URISyntaxException exp) {
-            Alert alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Information Dialog");
-            alert.setHeaderText(null);
-            alert.setContentText("Bag submission error");
-            alert.showAndWait();
+            alert("Bag submission error. Do you have access to the destination?");
         }
     }
 
@@ -375,6 +379,14 @@ public class Controller {
         } catch (MessagingException mex) {
             mex.printStackTrace();
         }
+    }
+    
+    private void alert(String message) {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Information Dialog");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
     
     static class PathRef {

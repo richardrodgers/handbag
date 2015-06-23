@@ -23,6 +23,7 @@ public class Workflow {
     private String bagNameGenerator;
     private String packageFormat;
     private String checksumType;
+    private Long maxBagSize;
     private List<MetadataSpec> metadata;
 
     public Workflow() {
@@ -90,6 +91,14 @@ public class Workflow {
 
     public void setChecksumType(String checksumType) {
         this.checksumType = checksumType;
+    }
+    
+    public Long getMaxBagSize() {
+        return maxBagSize;
+    }
+
+    public void setMaxBagSize(Long maxBagSize) {
+        this.maxBagSize = maxBagSize;
     }
 
     public List<MetadataSpec> getMetadata() {

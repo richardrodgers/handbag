@@ -1,5 +1,5 @@
 {
-  "name" : "Helen's Test Workflow 2",
+  "name" : "Helen's Test Workflow 3: Working",
   "icon" : "Gears.png",
   "destinationName" : "Helen's computer",
   "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
@@ -7,6 +7,7 @@
   "bagNameGenerator" : "transfer",
   "packageFormat": "zip",
   "checksumType": "md5",
+  "maxBagSize": 10000000000,
   "metadata": [
     {
       "name" : "Bag-Creator",
