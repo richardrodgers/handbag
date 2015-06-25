@@ -24,7 +24,7 @@ ext {
 }
 
 dependencies {
-    compile group: 'edu.mit.lib', name: 'bagit', version: '0.4'
+    compile group: 'edu.mit.lib', name: 'bagit', version: '0.5'
     compile group: 'com.fasterxml.jackson.jr', name: 'jackson-jr-objects', version: '2.4.0'
     compile group: 'org.controlsfx', name: 'controlsfx', version: '8.20.8'
     compile group: 'javax.mail', name: 'mail', version: '1.4.7'

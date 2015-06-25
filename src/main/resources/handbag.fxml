@@ -32,7 +32,8 @@
             <VBox>
                 <Label text="Metadata"/>
                 <PropertySheet fx:id="metadataPropertySheet"/>
-                <Label text="* = optional ! = sticky"/>
+                <Label text="* = optional"/>
+                <Label text="! = sticky"/>
                 <!-- <ListView fx:id="metadataListView"/>  -->
             </VBox>
             <VBox>
