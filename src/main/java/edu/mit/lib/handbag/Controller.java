@@ -244,7 +244,11 @@ public class Controller {
             });
             
             if (localDest) {
-                filler.toPackage(pkgFormat);
+                if ("uncompressed".equals(pkgFormat)) {
+                    filler.toDirectory();
+                } else {
+                    filler.toPackage(pkgFormat);
+                }
             } else {
                 // send to URL - TODO
             }
