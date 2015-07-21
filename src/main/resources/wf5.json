@@ -52,7 +52,7 @@
       "presetValue": "Massachusetts Institute of Technology, Institute Archives and Special collections, 77 Massachusetts Ave, 14N-118, Cambridge, MA 02139 USA"
     },
     {
-      "name": "Media-type-file-location",
+      "name": "Media-Type-File-Location",
       "valueList": ["Hard Drive", "CD/DVD", "Network", "USB drive", "Diskette"]
     }
   ]
