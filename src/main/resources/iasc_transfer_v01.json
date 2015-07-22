@@ -1,7 +1,7 @@
 {
   "name": "IASC Transfer",
   "icon": "SiteMap.png",
-  "destinationName": "DLM-Experiment Submission",
+  "destinationName": "DLM-Experiment/Submission",
   "destinationUrl": "file:///Volumes/DLM-Experiment/Submission",
   "destinationEmail" : "hbailey@mit.edu",
   "bagNameGenerator" : "IASC-Transfer",

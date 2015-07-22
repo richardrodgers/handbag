@@ -4,7 +4,7 @@
   "destinationName" : "Helen's computer",
   "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
   "destinationEmail" : "hbailey@mit.edu",
-  "bagNameGenerator" : "transfer",
+  "bagNameGenerator" : "test-transfer",
   "packageFormat": "zip",
   "checksumType": "md5",
   "maxBagSize": 10000000000,

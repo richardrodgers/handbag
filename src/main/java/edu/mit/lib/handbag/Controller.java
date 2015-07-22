@@ -225,16 +225,6 @@ public class Controller {
                     filler.payload(pr.getPath());
                 }
             }
-            // add metadata (currently only bag-info properties supported)
-            for (PropertySheet.Item mdItem : metadataPropertySheet.getItems()) {
-                MetadataItem item = (MetadataItem)mdItem;
-                if (item.getValue() != null && item.getValue().length() > 0) {
-                    if (item.getRealName().equals("Bag-Creator")) {
-                        creatorEmail = item.getValue();
-                    }
-                    filler.metadata(item.getRealName(), item.getValue());
-                }
-            }
             // add bag size and manifest contents to email body
             emailBody = new StringBuilder();
             emailBody.append("Bag size: ").append(bagSizeLabel.getText()).append("\n\n");
@@ -242,7 +232,18 @@ public class Controller {
             filler.getManifest().forEach((string) -> { 
                 emailBody.append(string).append("\n");
             });
-            
+            emailBody.append("\nBag metadata:\n");
+            // add metadata (currently only bag-info properties supported)
+            for (PropertySheet.Item mdItem : metadataPropertySheet.getItems()) {
+                MetadataItem item = (MetadataItem)mdItem;
+                if (item.getValue() != null && item.getValue().length() > 0) {
+                    if (item.getRealName().equals("Bag-Creator")) {
+                        creatorEmail = item.getValue();
+                    }
+                    emailBody.append(item.getRealName()).append(": ").append(item.getValue()).append("\n");
+                    filler.metadata(item.getRealName(), item.getValue());
+                }
+            }
             if (localDest) {
                 if ("uncompressed".equals(pkgFormat)) {
                     filler.toDirectory();
