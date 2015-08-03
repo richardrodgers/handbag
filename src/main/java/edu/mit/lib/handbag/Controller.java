@@ -104,7 +104,11 @@ public class Controller {
                         generateBagName(newSel.getBagNameGenerator());
                         bagLabel.setText(bagName);
                         sendButton.setText(newSel.getDestinationName());
-                        maxBagSize = newSel.getMaxBagSize();
+                        try {
+                            maxBagSize = newSel.getMaxBagSize();
+                        } catch(Exception e) {
+                            maxBagSize = 10000000000L;
+                        }
                         setMetadataList(newSel);
                     }
                 }
