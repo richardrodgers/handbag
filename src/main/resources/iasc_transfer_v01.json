@@ -2,15 +2,15 @@
   "name": "IASC Transfer",
   "icon": "SiteMap.png",
   "destinationName": "DLM-Experiment/Submission",
-  "destinationUrl": "file:///Volumes/DLM-Experiment/Submission",
-  "destinationEmail" : "hbailey@mit.edu",
+  "destinationUrl": "file:///Volumes/Archives/Submission",
+  "destinationEmail" : "smithkr@mit.edu",
   "bagNameGenerator" : "IASC-Transfer",
   "packageFormat": "zip",
   "maxBagSize": 10000000000,
   "metadata": [
     {
       "name" : "Bag-Creator",
-      "presetValue": "hbailey@mit.edu",
+      "presetValue": "smithkr@mit.edu",
       "sticky": true
     },
     {

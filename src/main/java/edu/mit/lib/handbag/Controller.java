@@ -265,7 +265,8 @@ public class Controller {
             counter++;
             reset(true);
         } catch (IOException | URISyntaxException exp) {
-            alert("Bag submission error. Do you have access to the destination?");
+            String d = workflowChoiceBox.getValue().getDestinationUrl();
+            alert("Bag submission error. Do you have access to " + d + "?");
         }
     }
 
