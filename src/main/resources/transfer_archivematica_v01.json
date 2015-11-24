@@ -1,29 +1,32 @@
 {
-  "name": "IASC Accession",
+  "name": "Transfer Archivematica",
   "icon": "SiteMap.png",
-  "destinationName": "Archives/Submission",
-  "destinationUrl": "file:///Volumes/Archives/Submission",
-  "destinationEmail" : "smithkr@mit.edu",
-  "bagNameGenerator" : "IASC-Accession",
+  "destinationName": "Archives/Submission/transfer2",
+  "destinationUrl": "file:///Volumes/Archives/Submission/transfer2",
+  "destinationEmail" : "archives-reformat@mit.edu",
+  "bagNameGenerator" : "CPR2IASC",
   "packageFormat": "zip",
   "maxBagSize": 10000000000,
   "metadata": [
     {
-      "name" : "Bag-Creator",
-      "presetValue": "smithkr@mit.edu",
+      "name" : "Bag-Creator-Email",
       "sticky": true
     },
     {
-      "name": "Accession-Number"
+      "name": "Job-Number",
+      "optional": true
+    },
+    {
+        "name": "Collection-Number"
     },
     {
       "name": "Content-Description"
     },
     {
-      "name": "Custodial-History"
+      "name": "Part-X-Of-Y"
     },
     {
-      "name": "Dates-of-Content"
+      "name": "MIT-Client"
     },
     {
       "name": "Fixed-Info",
