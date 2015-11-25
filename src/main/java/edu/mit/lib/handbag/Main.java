@@ -5,6 +5,7 @@
 package edu.mit.lib.handbag;
 
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 
 import javafx.application.Application;
@@ -27,12 +28,14 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         Map<String, String> appProps = getParameters().getNamed();
+        Map<String, String> temp = new HashMap<>();
+        temp.put("dispatcher", "http://mitlib-scads.appspot.com/workflows");
         Optional<String> agentOpt = Optional.of("anon");
         if (appProps.containsKey("agent")) {
             agentOpt = Dialogs.create().owner(primaryStage).
                        title("Agent").message("Enter Agent ID").showTextInput();
         }
-        controller.setAppProperties(appProps);
+        controller.setAppProperties(temp);
         controller.setAgent(agentOpt.orElse("anon"));
     }
 
