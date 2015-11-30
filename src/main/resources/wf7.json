@@ -1,12 +1,13 @@
 {
-  "name" : "Helen's Test Workflow 1: Tiny Bag",
+  "name" : "Helen's Test Workflow 5: DLM-experiment_Mac",
   "icon" : "Gears.png",
-  "destinationName" : "Richard's Computer",
-  "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
+  "destinationName" : "DLM-experiment/Experiments",
+  "destinationUrl" : "file:///Volumes/DLM-experiment/Experiments",
   "destinationEmail" : "hbailey@mit.edu",
-  "bagNameGenerator" : "transfer",
+  "bagNameGenerator" : "test-transfer",
   "packageFormat": "zip",
-  "maxBagSize": 10,
+  "checksumType": "md5",
+  "maxBagSize": 10000000000,
   "metadata": [
     {
       "name" : "Bag-Creator",

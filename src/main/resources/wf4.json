@@ -1,12 +1,12 @@
 {
-  "name" : "Helen's Test Workflow 1: Tiny Bag",
-  "icon" : "Gears.png",
+  "name" : "Helen's Test Workflow 2: Bad Destination",
+  "icon" : "SiteMap.png",
   "destinationName" : "Richard's Computer",
-  "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
+  "destinationUrl" : "file:///Users/richardrodgers/handbag",
   "destinationEmail" : "hbailey@mit.edu",
   "bagNameGenerator" : "transfer",
   "packageFormat": "zip",
-  "maxBagSize": 10,
+  "maxBagSize": 10000000000,
   "metadata": [
     {
       "name" : "Bag-Creator",

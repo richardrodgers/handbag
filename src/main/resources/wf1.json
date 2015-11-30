@@ -2,7 +2,8 @@
   "name" : "Workflow 1",
   "icon" : "Gears.png",
   "destinationName" : "Archives",
-  "destinationUrl" : "file:///Users/richardrodgers/handbag",
+  "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
+  "destinationEmail" : "rrodgers@mit.edu",
   "bagNameGenerator" : "transfer-${dfmt(YY-MM-DD)}.${seq}",
   "packageFormat": "zip",
   "metadata": [

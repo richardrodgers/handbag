@@ -1,3 +1,4 @@
 .gradle
 .DS_store
 build/
+/.nb-gradle/

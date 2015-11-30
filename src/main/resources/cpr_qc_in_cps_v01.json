@@ -1,0 +1,34 @@
+{
+  "name": "CPR QC in CPS",
+  "icon": "SiteMap.png",
+  "destinationName": "Reformatting/Ingest",
+  "destinationUrl": "file:///Volumes/reformatting/Ingest",
+  "destinationEmail" : "archives-reformat@mit.edu",
+  "bagNameGenerator" : "CPR2IASC",
+  "packageFormat": "zip",
+  "maxBagSize": 10000000000,
+  "metadata": [
+    {
+      "name" : "Bag-Creator-Email",
+      "sticky": true
+    },
+    {
+      "name": "Job-Number",
+      "optional": true
+    },
+    {
+      "name": "Content-Description"
+    },
+    {
+      "name": "Vendor"
+    },
+    {
+      "name": "MIT-Client"
+    },
+    {
+      "name": "Fixed-Info",
+      "presetValue": "This bag contains temporary files that are undergoing QC and are a copy of the master files which will be transferred to the MIT-Client.",
+      "sticky": true
+    }
+  ]
+}

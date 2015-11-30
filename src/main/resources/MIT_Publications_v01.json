@@ -1,0 +1,42 @@
+{
+  "name": "MIT Publications",
+  "icon": "SiteMap.png",
+  "destinationName": "CSM_Storage/Submission/MIT_Publications",
+  "destinationUrl": "file:///Volumes/CSM_Storage-1/Submission/MIT_Publications",
+  "destinationEmail" : "bturner@mit.edu",
+  "bagNameGenerator" : "MIT-Publications",
+  "packageFormat": "zip",
+  "maxBagSize": 10000000000,
+  "metadata": [
+    {
+      "name" : "Bag-Creator",
+      "presetValue": "bturner@mit.edu",
+      "sticky": true
+    },
+    {
+      "name": "Collection-Name"
+    },
+    {
+      "name": "Vendor",
+      "presetValue": "CPR",
+      "sticky": true
+    },
+    {
+      "name": "Type",
+      "presetValue": "Technical Report",
+      "sticky": true
+    },
+    {
+      "name": "Extent",
+      "presetValue": "Date"
+    },
+    {
+      "name": "Identifier"
+    },
+    {
+      "name": "Unit-Role",
+      "presetValue": "ADE, Beverly Turner, MIT Publications Team",
+      "sticky": true
+    }
+  ]
+}

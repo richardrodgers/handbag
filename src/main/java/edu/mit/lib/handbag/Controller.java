@@ -26,15 +26,25 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.mail.*;
+import javax.mail.internet.*;
+import javax.activation.*;
 
 import org.controlsfx.control.PropertySheet;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 
 import edu.mit.lib.bagit.Filler;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import javafx.scene.control.Alert.AlertType;
 
 public class Controller {
 
@@ -42,6 +52,7 @@ public class Controller {
     @FXML private ChoiceBox<Workflow> workflowChoiceBox;
     @FXML private Label bagLabel;
     @FXML private Label bagSizeLabel;
+    @FXML private Label bagCountLabel;
     @FXML private Button sendButton;
     @FXML private Button trashButton;
     @FXML private TreeView<PathRef> payloadTreeView;
@@ -55,11 +66,13 @@ public class Controller {
     private boolean gooeyMetadata = false;
     private boolean completeMetadata = false;
     private long bagSize = 0L;
+    private long maxBagSize = 10000000000L;
     private String bagName;
     private int counter = 0;
     private String agent = "anon";
     private Map<String, String> appProps;
     private StringBuilder relPathSB;
+    private StringBuilder emailBody;
 
     public void setAgent(String agent) {
         this.agent = agent;
@@ -91,6 +104,11 @@ public class Controller {
                         generateBagName(newSel.getBagNameGenerator());
                         bagLabel.setText(bagName);
                         sendButton.setText(newSel.getDestinationName());
+                        try {
+                            maxBagSize = newSel.getMaxBagSize();
+                        } catch(Exception e) {
+                            maxBagSize = 10000000000L;
+                        }
                         setMetadataList(newSel);
                     }
                 }
@@ -140,15 +158,32 @@ public class Controller {
                                 }
                                 @Override
                                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                    payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef(relPathSB.toString(), file)));
                                     bagSize += Files.size(file);
+                                    if (bagSize > maxBagSize) {
+                                        alert("Bag is too big.");
+                                        bagSize -= Files.size(file);
+                                        return FileVisitResult.TERMINATE;
+                                    } else {
+                                        payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef(relPathSB.toString(), file)));
+                                        return FileVisitResult.CONTINUE;
+                                    }
+                                }
+                                @Override
+                                public FileVisitResult postVisitDirectory(Path dir, IOException exp) throws IOException {
+                                    relPathSB = relPathSB.delete(relPathSB.lastIndexOf(dir.getFileName().toString()) - 1, relPathSB.length() - 1);
                                     return FileVisitResult.CONTINUE;
                                 }
                             });
                         } catch (IOException ioe) {}
                     } else {
-                        payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef("", dragFile.toPath())));
                         bagSize += dragFile.length();
+                        if (bagSize > maxBagSize) {
+                            alert("Bag is too big. Maximum bag size is " + scaledSize(maxBagSize, 0) + ".");
+                            bagSize -= dragFile.length();
+                            break;
+                        } else {
+                            payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef("", dragFile.toPath())));
+                        }
                     }
                 }
                 bagSizeLabel.setText(scaledSize(bagSize, 0));
@@ -185,6 +220,7 @@ public class Controller {
     private void transmitBag() {
         try {
             URI destUri = new URL(workflowChoiceBox.getValue().getDestinationUrl()).toURI();
+            String creatorEmail = "";
             String pkgFormat = workflowChoiceBox.getValue().getPackageFormat();
             boolean localDest = destUri.getScheme().startsWith("file");
             Path destDir = Paths.get(destUri);
@@ -198,20 +234,45 @@ public class Controller {
                     filler.payload(pr.getPath());
                 }
             }
+            // add bag size and manifest contents to email body
+            emailBody = new StringBuilder();
+            emailBody.append("Bag size: ").append(bagSizeLabel.getText()).append("\n\n");
+            emailBody.append("Bag contents:\n");
+            filler.getManifest().forEach((string) -> {
+                emailBody.append(string).append("\n");
+            });
+            emailBody.append("\nBag metadata:\n");
             // add metadata (currently only bag-info properties supported)
             for (PropertySheet.Item mdItem : metadataPropertySheet.getItems()) {
                 MetadataItem item = (MetadataItem)mdItem;
                 if (item.getValue() != null && item.getValue().length() > 0) {
+                    if (item.getRealName().equals("Bag-Creator")) {
+                        creatorEmail = item.getValue();
+                    }
+                    emailBody.append(item.getRealName()).append(": ").append(item.getValue()).append("\n");
                     filler.metadata(item.getRealName(), item.getValue());
                 }
             }
             if (localDest) {
-                filler.toPackage(pkgFormat);
+                if ("uncompressed".equals(pkgFormat)) {
+                    filler.toDirectory();
+                } else {
+                    filler.toPackage(pkgFormat);
+                }
             } else {
                 // send to URL - TODO
             }
+            sendEmail(workflowChoiceBox.getValue().getDestinationEmail(),
+                    "no-reply@mit.edu", creatorEmail, bagName, emailBody.toString());
+            // popup notification of successful bag transmission
+            alert("Bag " + bagName + " successfully transmitted " +
+                    "to " + workflowChoiceBox.getValue().getDestinationName() + ".");
+            counter++;
             reset(true);
-        } catch (IOException | URISyntaxException exp) {}
+        } catch (IOException | URISyntaxException exp) {
+            String d = workflowChoiceBox.getValue().getDestinationUrl();
+            alert("Bag submission error. Do you have access to " + d + "?");
+        }
     }
 
     // reset payload and metadata to ready state (respecting stickiness if requested)
@@ -244,6 +305,7 @@ public class Controller {
         bagSizeLabel.setText("[empty]");
         generateBagName(workflowChoiceBox.getValue().getBagNameGenerator());
         bagLabel.setText(bagName);
+        bagCountLabel.setText(counter + " bags transmitted");
     }
 
     // check and update disabled state of buttons based on application state
@@ -305,7 +367,41 @@ public class Controller {
     }
 
     private void generateBagName(String generator) {
-        bagName = "transfer." + counter++;
+        Date timestamp = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+        String ts = sdf.format(timestamp);
+        bagName = generator + "_" + ts;
+//        bagName = generator + "-" + counter++;
+    }
+
+    private void sendEmail(String to, String from, String cc, String bag, String body) {
+        String host = "outgoing.mit.edu";
+        Properties properties = System.getProperties();
+        properties.setProperty("mail.smtp.host", host);
+        Session session = Session.getDefaultInstance(properties);
+        String dest = workflowChoiceBox.getValue().getDestinationName();
+        try {
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO,
+                    new InternetAddress(to));
+            message.addRecipient(Message.RecipientType.CC, new InternetAddress(
+            cc));
+            message.setSubject("Bag " + bag + " has been submitted to " + dest + " by " + cc);
+            message.setText(body);
+
+            Transport.send(message);
+        } catch (MessagingException mex) {
+            mex.printStackTrace();
+        }
+    }
+
+    private void alert(String message) {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Information Dialog");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     static class PathRef {
