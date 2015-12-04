@@ -82,7 +82,7 @@ public class Controller {
     public void setAppProperties(Map<String, String> props) {
         appProps = props;
     }
-
+    
     public void initialize() {
 
         Image wfIm = new Image(getClass().getResourceAsStream("/SiteMap.png"));
@@ -340,7 +340,7 @@ public class Controller {
             for (String wfFile : workflowIds) {
                 Workflow wf = null;
                 if (dispatcherUrl != null) {
-                    try (InputStream in = new URL(dispatcherUrl).openConnection().getInputStream()) {
+                    try (InputStream in = new URL(wfFile).openConnection().getInputStream()) {
                         wf = JSON.std.beanFrom(Workflow.class, in);
                     }
                 } else {
@@ -360,7 +360,8 @@ public class Controller {
             wfIdList = JSON.std.listOfFrom(String.class, getClass().getResourceAsStream("/" + agent + ".json"));
         } else {
             try (InputStream in = new URL(dispatcherUrl).openConnection().getInputStream()) {
-                wfIdList = JSON.std.listOfFrom(String.class, in);
+                Map<String,Object> wfs = JSON.std.mapFrom(in);
+                wfIdList = (List)wfs.get("workflows");
             }
         }
         return wfIdList;
