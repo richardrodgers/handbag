@@ -1,0 +1,38 @@
+{
+  "name": "IASC Transfer",
+  "icon": "SiteMap.png",
+  "destinationName": "DLM-Experiment/Submission",
+  "destinationUrl": "file:///Volumes/Archives/Submission",
+  "destinationEmail" : "smithkr@mit.edu",
+  "bagNameGenerator" : "IASC-Transfer",
+  "packageFormat": "zip",
+  "maxBagSize": 10000000000,
+  "metadata": [
+    {
+      "name" : "Bag-Creator",
+      "presetValue": "smithkr@mit.edu",
+      "sticky": true
+    },
+    {
+      "name": "Job-or-Collection-Number",
+      "presetValue": "AC.0069 or Job 2015.002_02"
+    },
+    {
+      "name": "Content-Description",
+      "presetValue": "Press Releases"
+    },
+    {
+      "name": "Custodial-History",
+      "presetValue": "Digitized by CPS - Doc Services"
+    },
+    {
+      "name": "Dates-of-Content",
+      "presetValue": "1969-1975 March"
+    },
+    {
+      "name": "Fixed-Info",
+      "presetValue": "Bags are intended for Massachusetts Institute of Technology. Institute Archives and Special Collections. 77 Massachusetts Ave. 14N-118. Cambridge MA 02139 USA.",
+      "sticky": true
+    }
+  ]
+}

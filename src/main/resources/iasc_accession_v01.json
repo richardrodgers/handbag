@@ -1,0 +1,34 @@
+{
+  "name": "IASC Accession",
+  "icon": "SiteMap.png",
+  "destinationName": "Archives/Submission",
+  "destinationUrl": "file:///Volumes/Archives/Submission",
+  "destinationEmail" : "smithkr@mit.edu",
+  "bagNameGenerator" : "IASC-Accession",
+  "packageFormat": "zip",
+  "maxBagSize": 10000000000,
+  "metadata": [
+    {
+      "name" : "Bag-Creator",
+      "presetValue": "smithkr@mit.edu",
+      "sticky": true
+    },
+    {
+      "name": "Accession-Number"
+    },
+    {
+      "name": "Content-Description"
+    },
+    {
+      "name": "Custodial-History"
+    },
+    {
+      "name": "Dates-of-Content"
+    },
+    {
+      "name": "Fixed-Info",
+      "presetValue": "Bags are intended for Massachusetts Institute of Technology. Institute Archives and Special Collections. 77 Massachusetts Ave. 14N-118. Cambridge MA 02139 USA.",
+      "sticky": true
+    }
+  ]
+}

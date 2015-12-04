@@ -1,0 +1,22 @@
+{
+  "destinationUrl": "Test",
+  "destinationEmail": "Test",
+  "packageFormat": "zip",
+  "destinationName": "Test",
+  "name": "One metadata item",
+  "version": 1,
+  "bagNameGenerator": "Test",
+  "checksumType": "md5",
+  "maxBagSize": 10,
+  "metadata": [
+    {
+      "name": "Test",
+      "defaultValue": null,
+      "sticky": true,
+      "valueList": null,
+      "presetValue": "test",
+      "optional": false
+    }
+  ],
+  "icon": "Gear.gif"
+}

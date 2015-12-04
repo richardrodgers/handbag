@@ -19,8 +19,11 @@ public class Workflow {
     private String icon;
     private String destinationName;
     private String destinationUrl;
+    private String destinationEmail;
     private String bagNameGenerator;
     private String packageFormat;
+    private String checksumType;
+    private Long maxBagSize;
     private List<MetadataSpec> metadata;
 
     public Workflow() {
@@ -58,6 +61,14 @@ public class Workflow {
         this.destinationUrl = destinationUrl;
     }
 
+    public String getDestinationEmail() {
+        return destinationEmail;
+    }
+
+    public void setDestinationEmail(String destinationEmail) {
+        this.destinationEmail = destinationEmail;
+    }
+
     public String getBagNameGenerator() {
         return bagNameGenerator;
     }
@@ -72,6 +83,22 @@ public class Workflow {
 
     public void setPackageFormat(String packageFormat) {
         this.packageFormat = packageFormat;
+    }
+    
+    public String getChecksumType() {
+        return checksumType;
+    }
+
+    public void setChecksumType(String checksumType) {
+        this.checksumType = checksumType;
+    }
+    
+    public Long getMaxBagSize() {
+        return maxBagSize;
+    }
+
+    public void setMaxBagSize(Long maxBagSize) {
+        this.maxBagSize = maxBagSize;
     }
 
     public List<MetadataSpec> getMetadata() {

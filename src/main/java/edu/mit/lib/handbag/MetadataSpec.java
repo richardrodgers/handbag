@@ -16,7 +16,7 @@ public class MetadataSpec {
     private String name;
     private String presetValue;
     private String defaultValue;
-    private List<String> valueList;
+//    private List<String> valueList;
     private boolean optional;
     private boolean sticky;
 
@@ -62,15 +62,16 @@ public class MetadataSpec {
         this.sticky = sticky;
     }
 
-    public List<String> getValueList() {
-        return valueList;
-    }
-
-    public void setValueList(List<String> valueList) {
-        this.valueList = valueList;
-    }
+//    public List<String> getValueList() {
+//        return valueList;
+//    }
+//
+//    public void setValueList(List<String> valueList) {
+//        this.valueList = valueList;
+//    }
 
     public boolean needsValue() {
-        return (presetValue == null) && (defaultValue == null) && (valueList == null);
+        return (presetValue == null) && (defaultValue == null);
+//                && (valueList == null);
     }
 }

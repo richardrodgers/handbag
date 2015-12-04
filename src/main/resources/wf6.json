@@ -1,12 +1,13 @@
 {
-  "name" : "Helen's Test Workflow 1: Tiny Bag",
+  "name" : "Helen's Test Workflow 4: Working Zip No Date",
   "icon" : "Gears.png",
-  "destinationName" : "Richard's Computer",
+  "destinationName" : "Helen's computer",
   "destinationUrl" : "file:///Users/hbailey/localdev/handbag",
   "destinationEmail" : "hbailey@mit.edu",
   "bagNameGenerator" : "transfer",
-  "packageFormat": "zip",
-  "maxBagSize": 10,
+  "packageFormat": "zip.nt",
+  "checksumType": "md5",
+  "maxBagSize": 10000000000,
   "metadata": [
     {
       "name" : "Bag-Creator",

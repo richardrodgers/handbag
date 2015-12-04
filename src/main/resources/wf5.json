@@ -1,0 +1,59 @@
+{
+  "name": "IASC-transferAC-profile",
+  "icon": "SiteMap.png",
+  "destinationName": "Archives Storage Pathway",
+  "destinationUrl": "file:///Users/hbailey/localdev/handbag",
+  "destinationEmail" : "hbailey@mit.edu",
+  "bagNameGenerator" : "IASC-transferAC",
+  "packageFormat": "zip",
+  "maxBagSize": 10000000000,
+  "metadata": [
+    {
+      "name" : "Bag-Creator",
+      "presetValue": "hbailey@mit.edu",
+      "sticky": true
+    },
+    {
+      "name": "Sender-Contact"
+    },
+    {
+      "name": "Sender-Phone"
+    },
+    {
+      "name": "Sender-Email"
+    },
+    {
+      "name": "Sender-Department_Lab_Center"
+    },
+    {
+      "name": "Sender-Address"
+    },
+    {
+      "name": "Content-Description"
+    },
+    {
+      "name": "Content-History"
+    },
+    {
+      "name": "Recipient-Name",
+      "presetValue": "Elizabeth Andrews"
+    },
+    {
+      "name": "Recipient-Phone",
+      "presetValue": "+1.617.253.5136"
+    },
+    {
+      "name": "Recipient-Email",
+      "presetValue": "recordstransfer@mit.edu"
+    },
+    {
+      "name": "Recipient-Address",
+      "optional": true,
+      "presetValue": "Massachusetts Institute of Technology, Institute Archives and Special collections, 77 Massachusetts Ave, 14N-118, Cambridge, MA 02139 USA"
+    },
+    {
+      "name": "Media-Type-File-Location",
+      "valueList": ["Hard Drive", "CD/DVD", "Network", "USB drive", "Diskette"]
+    }
+  ]
+}
