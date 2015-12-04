@@ -27,15 +27,16 @@ public class Main extends Application {
         Scene scene = new Scene(root, 750, 420);
         primaryStage.setScene(scene);
         primaryStage.show();
-        Map<String, String> appProps = getParameters().getNamed();
-        Map<String, String> temp = new HashMap<>();
-        temp.put("dispatcher", "http://mitlib-scads.appspot.com/workflows");
+        Map<String, String> appProps = new HashMap<>();
+        appProps.put("dispatcher", "http://mitlib-scads.appspot.com/workflows");
+        Map<String, String> appParams = getParameters().getNamed();
+        appProps.putAll(appParams);
         Optional<String> agentOpt = Optional.of("anon");
         if (appProps.containsKey("agent")) {
             agentOpt = Dialogs.create().owner(primaryStage).
                        title("Agent").message("Enter Agent ID").showTextInput();
         }
-        controller.setAppProperties(temp);
+        controller.setAppProperties(appProps);
         controller.setAgent(agentOpt.orElse("anon"));
     }
 
