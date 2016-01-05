@@ -27,7 +27,9 @@ public class Main extends Application {
         Scene scene = new Scene(root, 750, 420);
         primaryStage.setScene(scene);
         primaryStage.show();
+        
         Map<String, String> appProps = new HashMap<>();
+        appProps.put("os", System.getProperty("os.name"));
         appProps.put("dispatcher", "http://mitlib-scads.appspot.com/workflows");
         Map<String, String> appParams = getParameters().getNamed();
         appProps.putAll(appParams);

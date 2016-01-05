@@ -62,6 +62,8 @@ public class MetadataSpec {
         this.sticky = sticky;
     }
 
+// Stubs for getting a list of metadata values. Commented out because they were
+// never implemented and will break if workflow profiles are pulled from a URL
 //    public List<String> getValueList() {
 //        return valueList;
 //    }
