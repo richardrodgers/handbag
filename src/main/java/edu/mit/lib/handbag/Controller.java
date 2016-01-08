@@ -169,6 +169,11 @@ public class Controller {
                                         return FileVisitResult.CONTINUE;
                                     }
                                 }
+                                @Override
+                                public FileVisitResult postVisitDirectory(Path dir, IOException exp) throws IOException {
+                                    relPathSB = relPathSB.delete(relPathSB.lastIndexOf(dir.getFileName().toString()) - 1, relPathSB.length() - 1);
+                                    return FileVisitResult.CONTINUE;
+                                }
                             });
                         } catch (IOException ioe) {}
                     } else {
@@ -234,7 +239,7 @@ public class Controller {
             emailBody = new StringBuilder();
             emailBody.append("Bag size: ").append(bagSizeLabel.getText()).append("\n\n");
             emailBody.append("Bag contents:\n");
-            filler.getManifest().forEach((string) -> { 
+            filler.getManifest().forEach((string) -> {
                 emailBody.append(string).append("\n");
             });
             emailBody.append("\nBag metadata:\n");
@@ -258,11 +263,12 @@ public class Controller {
             } else {
                 // send to URL - TODO
             }
-            sendEmail(workflowChoiceBox.getValue().getDestinationEmail(), 
+            sendEmail(workflowChoiceBox.getValue().getDestinationEmail(),
                     "no-reply@mit.edu", creatorEmail, bagName, emailBody.toString());
             // popup notification of successful bag transmission
-            alert("Bag " + bagName + " successfully transmitted " +
-                    "to " + destDir.toString() + ".");
+            alert("Bag " + bagName + " successfully transmitted " + "to " + 
+                    workflowChoiceBox.getValue().getDestinationName() + " (" + 
+                    destDir.toString() + ").");
             counter++;
             reset(true);
         } catch (IOException | URISyntaxException exp) {
@@ -408,7 +414,7 @@ public class Controller {
             mex.printStackTrace();
         }
     }
-    
+
     private void alert(String message) {
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("Information Dialog");
@@ -416,7 +422,7 @@ public class Controller {
         alert.setContentText(message);
         alert.showAndWait();
     }
-    
+
     static class PathRef {
         private String relPath;
         private Path path;
