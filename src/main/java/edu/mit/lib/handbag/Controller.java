@@ -103,6 +103,7 @@ public class Controller {
                         workflowLabel.setText(newSel.getName());
                         generateBagName(newSel.getBagNameGenerator());
                         bagLabel.setText(bagName);
+                        checkDestinationURL(newSel);
                         sendButton.setText(newSel.getDestinationName());
                         try {
                             maxBagSize = newSel.getMaxBagSize();
@@ -265,8 +266,9 @@ public class Controller {
             sendEmail(workflowChoiceBox.getValue().getDestinationEmail(),
                     "no-reply@mit.edu", creatorEmail, bagName, emailBody.toString());
             // popup notification of successful bag transmission
-            alert("Bag " + bagName + " successfully transmitted " +
-                    "to " + workflowChoiceBox.getValue().getDestinationName() + ".");
+            alert("Bag " + bagName + " successfully transmitted " + "to " + 
+                    workflowChoiceBox.getValue().getDestinationName() + " (" + 
+                    destDir.toString() + ").");
             counter++;
             reset(true);
         } catch (IOException | URISyntaxException exp) {
@@ -365,6 +367,22 @@ public class Controller {
             }
         }
         return wfIdList;
+    }
+
+    private void checkDestinationURL(Workflow wf) {
+        // Get destinationURL path from workflow
+        String dest = wf.getDestinationUrl();
+        // Confirm that destinationURL path is appropriate for current operating system and alert user if not
+        String osName = appProps.get("os");
+        if (osName.startsWith("Windows")) {
+            if (!dest.matches("^file:///[A-Z]:.*$")) {
+                alert("Destination file path (" + dest + ") is not valid for Windows, please check your workflow profile.");
+            }
+        } else if (osName.startsWith("Mac")) {
+            if (!dest.startsWith("file:///Volumes/")) {
+                alert("Destination path (" + dest + ") is not valid for Mac, please check your workflow profile.");
+            }
+        }
     }
 
     private void generateBagName(String generator) {
