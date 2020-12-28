@@ -4,7 +4,11 @@
  */
 package edu.mit.lib.handbag;
 
+import java.util.Optional;
+
 import org.controlsfx.control.PropertySheet;
+
+import javafx.beans.value.ObservableValue;
 
 /**
  * Value class specification of a metadata property
@@ -73,6 +77,12 @@ public class MetadataItem implements PropertySheet.Item {
 
     @Override
     public void setValue(Object o) {
-        this.value = (String)o;
+        this.value = (String) o;
+    }
+
+    @Override
+    public Optional<ObservableValue<? extends Object>> getObservableValue() {
+        // TODO Auto-generated method stub
+        return Optional.empty();
     }
 }
