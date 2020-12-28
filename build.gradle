@@ -1,20 +1,31 @@
 /* Build file for MIT HandBag
  * (a BagIt packaging and workflow support tool)
  */
-apply plugin: 'java'
-apply from: 'javafx.plugin'
+//apply plugin: 'java'
+//apply from: 'javafx.plugin'
+
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.9'
+}
+
+javafx {
+    version = "15.0.1"
+    modules = [ 'javafx.fxml', 'javafx.controls' ]
+}
 
 repositories {
+    mavenCentral()
     jcenter()
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 
 group = 'edu.mit.lib'
 archivesBaseName = 'handbag'
-version = '0.1'
+version = '0.2'
 description = 'GUI toolkit for BagIt packaging'
-//mainClassName = "edu.mit.lib.handbag.Main"
+mainClassName = "edu.mit.lib.handbag.Main"
 
 ext {
     developerName = "Richard Rodgers"
@@ -22,7 +33,7 @@ ext {
 }
 
 dependencies {
-    compile group: 'edu.mit.lib', name: 'bagit', version: '0.4'
-    compile group: 'com.fasterxml.jackson.jr', name: 'jackson-jr-objects', version: '2.4.0'
-    compile group: 'org.controlsfx', name: 'controlsfx', version: '8.20.8'
+    compile group: 'edu.mit.lib', name: 'bagit', version: '1.0'
+    compile group: 'com.fasterxml.jackson.jr', name: 'jackson-jr-objects', version: '2.12.0'
+    compile group: 'org.controlsfx', name: 'controlsfx', version: '11.0.3'
 }

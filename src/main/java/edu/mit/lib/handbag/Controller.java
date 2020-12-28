@@ -1,6 +1,6 @@
 /**
  * Copyright 2014 MIT Libraries
- * Licensed under: http://www.apache.org/licenses/LICENSE-2.0
+ * SPDX-Licence-Identifier: Apache-2.0
  */
 package edu.mit.lib.handbag;
 
@@ -8,6 +8,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -45,6 +46,7 @@ public class Controller {
     @FXML private Button sendButton;
     @FXML private Button trashButton;
     @FXML private TreeView<PathRef> payloadTreeView;
+    @FXML private TreeView<PathRef> tagTreeView;
     @FXML private PropertySheet metadataPropertySheet;
 
     // flags for state of metadata editing
@@ -113,17 +115,30 @@ public class Controller {
         trashButton.setDisable(true);
         trashButton.setOnAction(e -> reset(false));
 
-        TreeItem<PathRef> rootItem = new TreeItem<>(new PathRef("", Paths.get("data")));
+        initTreeView(payloadTreeView, "data");
+        initTreeView(tagTreeView, "root");
+
+        metadataPropertySheet.setModeSwitcherVisible(false);
+        metadataPropertySheet.setDisable(false);
+        metadataPropertySheet.addEventHandler(KeyEvent.ANY, event -> {
+            checkComplete(metadataPropertySheet.getItems());
+            event.consume();
+        });
+    }
+
+    private void initTreeView(TreeView<PathRef> view, String root) {
+        TreeItem<PathRef> rootItem = new TreeItem<>(new PathRef("", Paths.get(root)));
         rootItem.setExpanded(true);
-        payloadTreeView.setRoot(rootItem);
-        payloadTreeView.setOnDragOver(event -> {
-         if (event.getGestureSource() != payloadTreeView &&
+        view.setRoot(rootItem);
+        view.setContextMenu(initContextMenu(view, root.equals("data")));
+        view.setOnDragOver(event -> {
+         if (event.getGestureSource() != view &&
              event.getDragboard().getFiles().size() > 0) {
              event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
          }
          event.consume();
         });
-        payloadTreeView.setOnDragDropped(event -> {
+        view.setOnDragDropped(event -> {
             Dragboard db = event.getDragboard();
             boolean success = false;
             if (db.getFiles().size() > 0) {
@@ -140,15 +155,24 @@ public class Controller {
                                 }
                                 @Override
                                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                    payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef(relPathSB.toString(), file)));
-                                    bagSize += Files.size(file);
+                                    view.getRoot().getChildren().add(new TreeItem<>(new PathRef(relPathSB.toString(), file)));
+                                    //if (updateSize) {
+                                        bagSize += Files.size(file);
+                                    //}
+                                    return FileVisitResult.CONTINUE;
+                                }
+                                @Override
+                                public FileVisitResult postVisitDirectory(Path dir, IOException exp) throws IOException {
+                                    relPathSB = relPathSB.delete(relPathSB.lastIndexOf(dir.getFileName().toString()) - 1, relPathSB.length() - 1);
                                     return FileVisitResult.CONTINUE;
                                 }
                             });
                         } catch (IOException ioe) {}
                     } else {
-                        payloadTreeView.getRoot().getChildren().add(new TreeItem<>(new PathRef("", dragFile.toPath())));
-                        bagSize += dragFile.length();
+                        view.getRoot().getChildren().add(new TreeItem<>(new PathRef("", dragFile.toPath())));
+                        //if (updateSize) {
+                            bagSize += dragFile.length();
+                       // }
                     }
                 }
                 bagSizeLabel.setText(scaledSize(bagSize, 0));
@@ -158,13 +182,51 @@ public class Controller {
             event.setDropCompleted(success);
             event.consume();
         });
+    }
 
-        metadataPropertySheet.setModeSwitcherVisible(false);
-        metadataPropertySheet.setDisable(false);
-        metadataPropertySheet.addEventHandler(KeyEvent.ANY, event -> {
-            checkComplete(metadataPropertySheet.getItems());
-            event.consume();
+    private ContextMenu initContextMenu(TreeView<PathRef> view, boolean fetch) {
+        ContextMenu cm = new ContextMenu();
+        MenuItem addDirItem = new MenuItem("Add Directory");
+        addDirItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                System.out.println("Add Dir!");
+            }
         });
+        MenuItem removeItem = new MenuItem("Remove");
+        removeItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                TreeItem<PathRef> si = (TreeItem<PathRef>)view.getSelectionModel().getSelectedItem();
+                // subtract bytes from payload count
+                try {
+                    bagSize -= Files.size(si.getValue().getPath());
+                    bagSizeLabel.setText(scaledSize(bagSize, 0));
+                } catch (Exception exp) {}
+                si.getParent().getChildren().remove(si);
+            }
+        });
+        MenuItem fetchItem = new MenuItem("Fetch Location");
+        fetchItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                TreeItem<PathRef> si = (TreeItem<PathRef>)view.getSelectionModel().getSelectedItem();
+                PathRef pr = si.getValue();
+                try {
+                    if (pr.getLocation() == null) {
+                        pr.setLocation("http://www.foo/bar");
+                        // subtract bytes from payload count - which only includes in-bag files
+                        bagSize -= Files.size(si.getValue().getPath());
+                        bagSizeLabel.setText(scaledSize(bagSize, 0));
+                    }
+                } catch (Exception exp) {}
+            }
+        });
+        cm.getItems().addAll(addDirItem, removeItem);
+        if (fetch) {
+            cm.getItems().add(fetchItem);
+        }
+        return cm;
     }
 
     private void checkComplete(List<PropertySheet.Item> mdList) {
@@ -190,12 +252,30 @@ public class Controller {
             Path destDir = Paths.get(destUri);
             Filler filler = localDest ? new Filler(destDir.resolve(bagName)) : new Filler();
             // add payload files
-            for (TreeItem ti : payloadTreeView.getRoot().getChildren()) {
-                PathRef pr = (PathRef)ti.getValue();
-                if (pr.getRelPath().length() > 0) {
-                    filler.payload(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath());
+            for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
+                PathRef pr = ti.getValue();
+                URI location = pr.getLocation();
+                if (location == null) {
+                    if (pr.getRelPath().length() > 0) {
+                        filler.payload(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath());
+                    } else {
+                        filler.payload(pr.getPath());
+                    }
                 } else {
-                    filler.payload(pr.getPath());
+                    if (pr.getRelPath().length() > 0) {
+                        filler.payloadRef(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath(), location);
+                    } else {
+                        filler.payloadRef(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath(), location);
+                    }
+                }
+            }
+             // add tag files
+             for (TreeItem<PathRef> ti : tagTreeView.getRoot().getChildren()) {
+                PathRef pr = ti.getValue();
+                if (pr.getRelPath().length() > 0) {
+                    filler.tag(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath());
+                } else {
+                    filler.tag(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath());
                 }
             }
             // add metadata (currently only bag-info properties supported)
@@ -206,7 +286,8 @@ public class Controller {
                 }
             }
             if (localDest) {
-                filler.toPackage(pkgFormat);
+                // TODO - set notime param via config
+                filler.toPackage(pkgFormat, false);
             } else {
                 // send to URL - TODO
             }
@@ -311,6 +392,7 @@ public class Controller {
     static class PathRef {
         private String relPath;
         private Path path;
+        private String location;
 
         public PathRef(String relPath, Path path) {
             this.relPath = relPath;
@@ -323,6 +405,14 @@ public class Controller {
 
         public Path getPath() {
             return path;
+        }
+
+        public void setLocation(String location) {
+            this.location = location;
+        }
+
+        public URI getLocation() throws URISyntaxException {
+            return location != null ? new URI(location) : null;
         }
 
         public String toString() {
