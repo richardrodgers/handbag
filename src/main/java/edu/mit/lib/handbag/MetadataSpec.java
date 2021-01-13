@@ -4,7 +4,12 @@
  */
 package edu.mit.lib.handbag;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import edu.mit.lib.handbag.model.TagConstraint;
+import edu.mit.lib.handbag.model.TagTemplate;
 
 /**
  * Value class specification of a metadata property
@@ -21,6 +26,21 @@ public class MetadataSpec {
     private boolean sticky;
 
     public MetadataSpec() {}
+
+    public MetadataSpec(TagConstraint constraint, Optional<TagTemplate> templateOpt) {
+        this.name = constraint.getName();
+        this.optional = ! constraint.isRequired();
+        this.valueList = new ArrayList<String>(constraint.getValues());
+        this.sticky = false;
+        if (templateOpt.isPresent()) {
+            TagTemplate template = templateOpt.get();
+            if (template.isEditable()) {
+                defaultValue = template.getValues().get(0);
+            } else {
+                presetValue = template.getValues().get(0);
+            }
+        }
+    }
 
     public String getName() {
         return name;
