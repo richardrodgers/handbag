@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 MIT Libraries
+ * Copyright 2021 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
 package edu.mit.lib.handbag;

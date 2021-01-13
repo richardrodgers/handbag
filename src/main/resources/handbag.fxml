@@ -10,7 +10,7 @@
         <HBox>
             <VBox>
                 <Label fx:id="workflowLabel" text="Workflow"/>
-                <ChoiceBox fx:id="workflowChoiceBox"/>
+            <!--  <ChoiceBox fx:id="workflowChoiceBox"/> -->
             </VBox>
             <Separator/>
             <VBox>
@@ -24,6 +24,15 @@
         </HBox>
         <Separator/>
         <TabPane tabClosingPolicy="UNAVAILABLE">
+            <Tab text="Delivery">
+                <VBox>
+                    <ChoiceBox fx:id="workflowChoiceBox"/>
+                    <Separator/>
+                    <HBox>
+                        <Label text="Destination"/>
+                    </HBox>
+                </VBox>
+            </Tab>
             <Tab text="Payload Files">
                 <TreeView fx:id="payloadTreeView"/>
             </Tab>
@@ -37,11 +46,6 @@
                     <Label text="* = optional ! = sticky"/>
                 </VBox>
                 <!-- <ListView fx:id="metadataListView"/>  -->
-            </Tab>
-            <Tab text="Delivery">
-                <HBox>
-                     <Label text="Destination"/>
-                </HBox>
             </Tab>
         </TabPane>
     </VBox>

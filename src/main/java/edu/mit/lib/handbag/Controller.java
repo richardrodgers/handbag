@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 MIT Libraries
+ * Copyright 2021 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
 package edu.mit.lib.handbag;
@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
+import javafx.util.Callback;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,12 +31,14 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.controlsfx.control.PropertySheet;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 
 import edu.mit.lib.bagit.Filler;
+import edu.mit.lib.handbag.model.MetadataAssembler;
 
 public class Controller {
 
@@ -61,7 +64,8 @@ public class Controller {
     private int counter = 0;
     private String agent = "anon";
     private Map<String, String> appProps;
-    private StringBuilder relPathSB;
+    private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
+    private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
 
     public void setAgent(String agent) {
         this.agent = agent;
@@ -127,16 +131,22 @@ public class Controller {
     }
 
     private void initTreeView(TreeView<PathRef> view, String root) {
-        TreeItem<PathRef> rootItem = new TreeItem<>(new PathRef("", Paths.get(root)));
+        TreeItem<PathRef> rootItem = new TreeItem<>(new PathRef(null, root, Paths.get(root), true), new ImageView(dirIcon));
         rootItem.setExpanded(true);
+        view.setEditable(true);
+        view.setCellFactory(new Callback<TreeView<PathRef>, TreeCell<PathRef>>(){
+            @Override
+            public TreeCell<PathRef> call(TreeView<PathRef> p) {
+                return new TextFieldTreeCellImpl(root.equals("data"));
+            }
+        });
         view.setRoot(rootItem);
-        view.setContextMenu(initContextMenu(view, root.equals("data")));
         view.setOnDragOver(event -> {
-         if (event.getGestureSource() != view &&
-             event.getDragboard().getFiles().size() > 0) {
-             event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
-         }
-         event.consume();
+            if (event.getGestureSource() != view &&
+                event.getDragboard().getFiles().size() > 0) {
+                event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+            }
+            event.consume();
         });
         view.setOnDragDropped(event -> {
             Dragboard db = event.getDragboard();
@@ -145,17 +155,15 @@ public class Controller {
                 for (File dragFile : db.getFiles()) {
                     if (dragFile.isDirectory()) {
                         // explode directory and add expanded relative paths to tree
-                        relPathSB = new StringBuilder();
                         try {
                             Files.walkFileTree(dragFile.toPath(), new SimpleFileVisitor<Path>() {
                                 @Override
                                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                                    relPathSB.append(dir.getFileName()).append("/");
                                     return FileVisitResult.CONTINUE;
                                 }
                                 @Override
                                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                    view.getRoot().getChildren().add(new TreeItem<>(new PathRef(relPathSB.toString(), file)));
+                                    selectedRoot(view).getChildren().add(new TreeItem<>(new PathRef(null, file.getFileName().toString(), file, false)));
                                     //if (updateSize) {
                                         bagSize += Files.size(file);
                                     //}
@@ -163,13 +171,13 @@ public class Controller {
                                 }
                                 @Override
                                 public FileVisitResult postVisitDirectory(Path dir, IOException exp) throws IOException {
-                                    relPathSB = relPathSB.delete(relPathSB.lastIndexOf(dir.getFileName().toString()) - 1, relPathSB.length() - 1);
                                     return FileVisitResult.CONTINUE;
                                 }
                             });
                         } catch (IOException ioe) {}
                     } else {
-                        view.getRoot().getChildren().add(new TreeItem<>(new PathRef("", dragFile.toPath())));
+                        var sroot = selectedRoot(view);
+                        sroot.getChildren().add(new TreeItem<>(new PathRef(null, dragFile.getName(), dragFile.toPath(), false)));
                         //if (updateSize) {
                             bagSize += dragFile.length();
                        // }
@@ -182,51 +190,19 @@ public class Controller {
             event.setDropCompleted(success);
             event.consume();
         });
-    }
+    } 
 
-    private ContextMenu initContextMenu(TreeView<PathRef> view, boolean fetch) {
-        ContextMenu cm = new ContextMenu();
-        MenuItem addDirItem = new MenuItem("Add Directory");
-        addDirItem.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                System.out.println("Add Dir!");
+    private TreeItem<PathRef> selectedRoot(TreeView<PathRef> view) {
+        // determine appropriate root for insertions
+        TreeItem<PathRef> sel = view.getSelectionModel().getSelectedItem();
+        if (sel != null) {
+            if (sel.getValue().isFolder()) {
+                return sel;
+            } else {
+                return sel.getParent();
             }
-        });
-        MenuItem removeItem = new MenuItem("Remove");
-        removeItem.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                TreeItem<PathRef> si = (TreeItem<PathRef>)view.getSelectionModel().getSelectedItem();
-                // subtract bytes from payload count
-                try {
-                    bagSize -= Files.size(si.getValue().getPath());
-                    bagSizeLabel.setText(scaledSize(bagSize, 0));
-                } catch (Exception exp) {}
-                si.getParent().getChildren().remove(si);
-            }
-        });
-        MenuItem fetchItem = new MenuItem("Fetch Location");
-        fetchItem.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                TreeItem<PathRef> si = (TreeItem<PathRef>)view.getSelectionModel().getSelectedItem();
-                PathRef pr = si.getValue();
-                try {
-                    if (pr.getLocation() == null) {
-                        pr.setLocation("http://www.foo/bar");
-                        // subtract bytes from payload count - which only includes in-bag files
-                        bagSize -= Files.size(si.getValue().getPath());
-                        bagSizeLabel.setText(scaledSize(bagSize, 0));
-                    }
-                } catch (Exception exp) {}
-            }
-        });
-        cm.getItems().addAll(addDirItem, removeItem);
-        if (fetch) {
-            cm.getItems().add(fetchItem);
         }
-        return cm;
+        return view.getRoot();
     }
 
     private void checkComplete(List<PropertySheet.Item> mdList) {
@@ -253,29 +229,15 @@ public class Controller {
             Filler filler = localDest ? new Filler(destDir.resolve(bagName)) : new Filler();
             // add payload files
             for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
-                PathRef pr = ti.getValue();
-                URI location = pr.getLocation();
-                if (location == null) {
-                    if (pr.getRelPath().length() > 0) {
-                        filler.payload(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath());
-                    } else {
-                        filler.payload(pr.getPath());
-                    }
-                } else {
-                    if (pr.getRelPath().length() > 0) {
-                        filler.payloadRef(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath(), location);
-                    } else {
-                        filler.payloadRef(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath(), location);
-                    }
-                }
+                fillPayload(ti, filler);
             }
              // add tag files
              for (TreeItem<PathRef> ti : tagTreeView.getRoot().getChildren()) {
                 PathRef pr = ti.getValue();
                 if (pr.getRelPath().length() > 0) {
-                    filler.tag(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath());
+                    filler.tag(pr.getFullPath(), pr.getSourcePath());
                 } else {
-                    filler.tag(pr.getRelPath() + pr.getPath().getFileName(), pr.getPath());
+                    filler.tag(pr.getFullPath(), pr.getSourcePath());
                 }
             }
             // add metadata (currently only bag-info properties supported)
@@ -293,6 +255,43 @@ public class Controller {
             }
             reset(true);
         } catch (IOException | URISyntaxException exp) {}
+    }
+
+    private void fillPayload(TreeItem<PathRef> ti, Filler filler) throws IOException, URISyntaxException {
+        PathRef pr = ti.getValue();
+        PathRef parent = ti.getParent().getValue();
+        if (! pr.isFolder()) {
+            Optional<URI> location = pr.getLocation();
+            if (location.isEmpty()) {
+                System.out.println("relPath: " + parent.getRelPath());
+                if (parent.getRelPath() != null) {
+                    filler.payload(makeRelPath(parent, pr), pr.getSourcePath());
+                } else {
+                    filler.payload(pr.getSourcePath());
+                }
+            } else {
+                if (parent.getRelPath() != null) {
+                    filler.payloadRef(makeRelPath(parent, pr), pr.getSourcePath(), location.get());
+                } else {
+                    filler.payloadRef(pr.getFileName(), pr.getSourcePath(), location.get());
+                }
+            }
+        } else {
+            for (TreeItem<PathRef> pti : ti.getChildren()) {
+                System.out.println("in folder children");
+                fillPayload(pti, filler);
+            }
+        }
+    }
+
+    private String makeRelPath(PathRef parent, PathRef ref) {
+        if (parent.relPath == null) {
+            return ref.fileName;
+        } else if (parent.relPath.isEmpty()) {
+            return parent.fileName + "/" + ref.fileName;
+        } else {
+            return parent.relPath + "/" + ref.fileName;
+        }
     }
 
     // reset payload and metadata to ready state (respecting stickiness if requested)
@@ -339,7 +338,7 @@ public class Controller {
         ObservableList<PropertySheet.Item> items = metadataPropertySheet.getItems();
         items.clear();
         boolean anyNeeded = false;
-        for (MetadataSpec spec : wf.getMetadata()) {
+        for (MetadataSpec spec : new MetadataAssembler().getMetadata()) {
             if (! spec.isOptional() && spec.needsValue()) {
                 anyNeeded = true;
             }
@@ -389,35 +388,209 @@ public class Controller {
         bagName = "transfer." + counter++;
     }
 
+    private final class TextFieldTreeCellImpl extends TreeCell<PathRef> {
+ 
+        private TextField textField;
+        private final ContextMenu ctxMenu = new ContextMenu();
+        private final boolean payload; 
+ 
+        public TextFieldTreeCellImpl(boolean payload) {
+            this.payload = payload;
+        }
+ 
+        @Override
+        public void startEdit() {
+            super.startEdit();
+ 
+            if (textField == null) {
+                createTextField();
+            }
+            setText(null);
+            setGraphic(textField);
+            textField.selectAll();
+        }
+ 
+        @Override
+        public void cancelEdit() {
+            super.cancelEdit();
+            setText(((PathRef)getItem()).getFileName());
+            setGraphic(getTreeItem().getGraphic());
+        }
+ 
+        @Override
+        public void updateItem(PathRef item, boolean empty) {
+            super.updateItem(item, empty);
+ 
+            if (empty) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                if (isEditing()) {
+                    if (textField != null) {
+                        textField.setText(getString());
+                    }
+                    setText(null);
+                    setGraphic(textField);
+                } else {
+                    setText(getString());
+                    setGraphic(getTreeItem().getGraphic());
+                    //if (!getTreeItem().isLeaf()&&getTreeItem().getParent()!= null) {
+                        if (ctxMenu.getItems().isEmpty()) {
+                            if (item.isFolder()) {
+                                ctxMenu.getItems().add(addFolderMenuItem(this));
+                            } else if (getTreeItem().getParent() != null) {
+                                ctxMenu.getItems().add(removeMenuItem(this));
+                                if (payload) {
+                                    ctxMenu.getItems().add(fetchMenuItem(this));
+                                }
+                            }
+                            setContextMenu(ctxMenu);
+                        }
+                   // }
+                } 
+            }
+        }
+ 
+        private void createTextField() {
+            textField = new TextField(getString());
+            textField.setOnKeyReleased(new EventHandler<KeyEvent>() {
+                @Override
+                public void handle(KeyEvent t) {
+                    if (t.getCode() == KeyCode.ENTER) {
+                        commitEdit(getItem().rename(textField.getText()));
+                    } else if (t.getCode() == KeyCode.ESCAPE) {
+                        cancelEdit();
+                    }
+                }
+            });
+        }
+ 
+        private String getString() {
+            return getItem() == null ? "" : getItem().toString();
+        }
+    }
+
     static class PathRef {
-        private String relPath;
-        private Path path;
+        private String relPath;  // not including fileName
+        private String fileName;
+        private Path srcPath;
+        private boolean folder;
         private String location;
 
-        public PathRef(String relPath, Path path) {
+        public PathRef(String relPath, String fileName, Path srcPath, boolean folder) {
             this.relPath = relPath;
-            this.path = path;
+            this.fileName = fileName;
+            this.srcPath = srcPath;
+            this.folder = folder;
+        }
+
+        public PathRef rename(String name) {
+            return new PathRef(relPath, name, srcPath, folder);
         }
 
         public String getRelPath() {
             return relPath;
         }
 
-        public Path getPath() {
-            return path;
+        public String getFullPath() {
+            return relPath + "/" + fileName;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public Path getSourcePath() {
+            return srcPath;
+        }
+
+        public boolean isFolder() {
+            return folder;
         }
 
         public void setLocation(String location) {
             this.location = location;
         }
 
-        public URI getLocation() throws URISyntaxException {
-            return location != null ? new URI(location) : null;
+        public Optional<URI> getLocation() throws URISyntaxException {
+            return location != null ? Optional.of(new URI(location)) : Optional.empty();
         }
 
         public String toString() {
-            return relPath + path.toFile().getName();
+            return fileName;
         }
+    }
+
+    private MenuItem addFolderMenuItem(TreeCell<PathRef> cell) {
+        MenuItem addDirItem = new MenuItem("Add Folder");
+        addDirItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                String name = "new-folder";
+                TreeItem<PathRef> item = cell.getTreeItem();
+                var parent = item.getParent();
+                String relPath = "";
+                if (parent != null) {
+                    var parVal = parent.getValue();
+                    if (parVal.relPath != null) {
+                        if (parVal.relPath.length() > 0) {
+                            relPath = parVal.relPath + "/" + parVal.fileName;
+                        } else {
+                            relPath = parVal.fileName;
+                        }
+                    }
+                }
+                var ti = new TreeItem<PathRef>(new PathRef(relPath, name, Paths.get(name), true), new ImageView(dirIcon));
+                item.getChildren().add(ti);
+                ti.setExpanded(true);
+            }
+        });
+        return addDirItem;
+    }
+
+    private MenuItem removeMenuItem(TreeCell<PathRef> cell) {
+        MenuItem removeItem = new MenuItem("Remove");
+        removeItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                TreeItem<PathRef> item = cell.getTreeItem();
+                // subtract bytes from payload count
+                try {
+                    bagSize -= Files.size(item.getValue().getSourcePath());
+                    bagSizeLabel.setText(scaledSize(bagSize, 0));
+                } catch (Exception exp) {}
+                item.getParent().getChildren().remove(item);
+            }
+        });
+        return removeItem;
+    }
+
+    private MenuItem fetchMenuItem(TreeCell<PathRef> cell) {
+        MenuItem fetchItem = new MenuItem("Fetch URI");
+        fetchItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                new TextInputDialog("Fetch URI").showAndWait()
+                .ifPresent(uri -> {
+                    TreeItem<PathRef> item = cell.getTreeItem();
+                    PathRef pr = item.getValue();
+                    try {
+                        if (pr.getLocation().isEmpty()) {
+                            pr.setLocation(uri);
+                            item.setGraphic(new ImageView(refIcon));
+                            // subtract bytes from payload count - should include only in-bag files
+                            bagSize -= Files.size(pr.getSourcePath());
+                            bagSizeLabel.setText(scaledSize(bagSize, 0));
+                        }
+                    } catch (Exception exp) {}
+                });
+            }
+        });
+        return fetchItem;
     }
 
     private static final String[] tags = {"bytes", "KB", "MB", "GB", "TB"};
