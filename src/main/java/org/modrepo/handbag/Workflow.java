@@ -1,8 +1,8 @@
 /**
- * Copyright 2014 MIT Libraries
+ * Copyright 2023 MIT Richard Rodgers
  * Licensed under: http://www.apache.org/licenses/LICENSE-2.0
  */
-package edu.mit.lib.handbag;
+package org.modrepo.handbag;
 
 import java.util.ArrayList;
 import java.util.List;

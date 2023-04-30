@@ -1,5 +1,5 @@
 /* 
- * Build file forHandBag
+ * Build file for HandBag
  * (a BagIt packaging and workflow support tool)
  * Copyright 2023, Richard Rodgers
  */
@@ -36,7 +36,7 @@ group = 'org.modrepo'
 archivesBaseName = 'handbag'
 version = '0.2'
 description = 'GUI toolkit for BagIt packaging'
-mainClassName = "edu.mit.lib.handbag.Main"
+mainClassName = "org.modrepo.handbag.Main"
 
 ext {
     developerName = "Richard Rodgers"

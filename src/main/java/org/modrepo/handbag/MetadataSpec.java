@@ -1,15 +1,15 @@
 /**
- * Copyright 2014 MIT Libraries
+ * Copyright 2023 MIT Richard Rodgers
  * Licensed under: http://www.apache.org/licenses/LICENSE-2.0
  */
-package edu.mit.lib.handbag;
+package org.modrepo.handbag;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import edu.mit.lib.handbag.model.TagConstraint;
-import edu.mit.lib.handbag.model.TagTemplate;
+import org.modrepo.handbag.model.TagConstraint;
+import org.modrepo.handbag.model.TagTemplate;
 
 /**
  * Value class specification of a metadata property
