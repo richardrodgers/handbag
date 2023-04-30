@@ -1,27 +1,38 @@
-/* Build file for MIT HandBag
+/* 
+ * Build file forHandBag
  * (a BagIt packaging and workflow support tool)
+ * Copyright 2023, Richard Rodgers
  */
-//apply plugin: 'java'
-//apply from: 'javafx.plugin'
 
 plugins {
+    id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.9'
+    id 'org.openjfx.javafxplugin' version '0.0.13'
 }
 
 javafx {
-    version = "15.0.1"
+    version = "20"
     modules = [ 'javafx.fxml', 'javafx.controls' ]
 }
 
 repositories {
     mavenCentral()
-    jcenter()
+    mavenLocal()
+    maven {
+        url = uri("https://maven.pkg.github.com/richardrodgers/packr")
+        credentials {
+            username = project.findProperty("gpr.user") ?: "richardrodgers"
+            password = project.findProperty("gpr.key") ?: System.getenv("GH_TOKEN")
+        }
+    }
 }
 
-sourceCompatibility = 11
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
-group = 'edu.mit.lib'
+group = 'org.modrepo'
 archivesBaseName = 'handbag'
 version = '0.2'
 description = 'GUI toolkit for BagIt packaging'
@@ -33,7 +44,7 @@ ext {
 }
 
 dependencies {
-    compile group: 'edu.mit.lib', name: 'bagit', version: '1.0'
-    compile group: 'com.fasterxml.jackson.jr', name: 'jackson-jr-objects', version: '2.12.0'
-    compile group: 'org.controlsfx', name: 'controlsfx', version: '11.0.3'
+    implementation 'org.modrepo:packr:1.0'
+    implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.12.0'
+    implementation 'org.controlsfx:controlsfx:11.1.2'
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Richard Rodgers
+ * Copyright 2023 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
 package edu.mit.lib.handbag.model;
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static edu.mit.lib.bagit.Bag.MetadataName.*;
+import static org.modrepo.packr.Bag.MetadataName.*;
 
 import edu.mit.lib.handbag.MetadataSpec;
 
