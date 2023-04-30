@@ -2,7 +2,7 @@
  * Copyright 2023 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
-package edu.mit.lib.handbag;
+package org.modrepo.handbag;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -40,7 +40,7 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import org.modrepo.packr.BagBuilder;
 import org.modrepo.packr.Serde;
 
-import edu.mit.lib.handbag.model.MetadataAssembler;
+import org.modrepo.handbag.model.MetadataAssembler;
 
 public class Controller {
 

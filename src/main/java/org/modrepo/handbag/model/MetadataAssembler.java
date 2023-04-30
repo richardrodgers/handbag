@@ -2,7 +2,7 @@
  * Copyright 2023 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
-package edu.mit.lib.handbag.model;
+package org.modrepo.handbag.model;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,7 +13,7 @@ import java.util.Set;
 
 import static org.modrepo.packr.Bag.MetadataName.*;
 
-import edu.mit.lib.handbag.MetadataSpec;
+import org.modrepo.handbag.MetadataSpec;
 
 public class MetadataAssembler {
     

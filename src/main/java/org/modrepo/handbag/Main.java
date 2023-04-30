@@ -1,8 +1,8 @@
 /**
- * Copyright 2021 Richard Rodgers
+ * Copyright 2023 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
-package edu.mit.lib.handbag;
+package org.modrepo.handbag;
 
 import java.util.Map;
 import java.util.Optional;
