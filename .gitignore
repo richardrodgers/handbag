@@ -1,4 +1,5 @@
 .gradle
+.metals
 .DS_store
 build/
 bin/

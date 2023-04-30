@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Richard Rodgers
+ * Copyright 2023 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
 package edu.mit.lib.handbag;
@@ -37,7 +37,9 @@ import org.controlsfx.control.PropertySheet;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 
-import edu.mit.lib.bagit.Filler;
+import org.modrepo.packr.BagBuilder;
+import org.modrepo.packr.Serde;
+
 import edu.mit.lib.handbag.model.MetadataAssembler;
 
 public class Controller {
@@ -226,30 +228,30 @@ public class Controller {
             String pkgFormat = workflowChoiceBox.getValue().getPackageFormat();
             boolean localDest = destUri.getScheme().startsWith("file");
             Path destDir = Paths.get(destUri);
-            Filler filler = localDest ? new Filler(destDir.resolve(bagName)) : new Filler();
+            var builder = localDest ? new BagBuilder(destDir.resolve(bagName)) : new BagBuilder();
             // add payload files
             for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
-                fillPayload(ti, filler);
+                fillPayload(ti, builder);
             }
              // add tag files
              for (TreeItem<PathRef> ti : tagTreeView.getRoot().getChildren()) {
                 PathRef pr = ti.getValue();
                 if (pr.getRelPath().length() > 0) {
-                    filler.tag(pr.getFullPath(), pr.getSourcePath());
+                    builder.tag(pr.getFullPath(), pr.getSourcePath());
                 } else {
-                    filler.tag(pr.getFullPath(), pr.getSourcePath());
+                    builder.tag(pr.getFullPath(), pr.getSourcePath());
                 }
             }
             // add metadata (currently only bag-info properties supported)
             for (PropertySheet.Item mdItem : metadataPropertySheet.getItems()) {
                 MetadataItem item = (MetadataItem)mdItem;
                 if (item.getValue() != null && item.getValue().length() > 0) {
-                    filler.metadata(item.getRealName(), item.getValue());
+                    builder.metadata(item.getRealName(), item.getValue());
                 }
             }
             if (localDest) {
                 // TODO - set notime param via config
-                filler.toPackage(pkgFormat, false);
+                Serde.toPackage(builder.build(), pkgFormat, false, Optional.empty() );
             } else {
                 // send to URL - TODO
             }
@@ -257,7 +259,7 @@ public class Controller {
         } catch (IOException | URISyntaxException exp) {}
     }
 
-    private void fillPayload(TreeItem<PathRef> ti, Filler filler) throws IOException, URISyntaxException {
+    private void fillPayload(TreeItem<PathRef> ti, BagBuilder builder) throws IOException, URISyntaxException {
         PathRef pr = ti.getValue();
         PathRef parent = ti.getParent().getValue();
         if (! pr.isFolder()) {
@@ -265,21 +267,21 @@ public class Controller {
             if (location.isEmpty()) {
                 System.out.println("relPath: " + parent.getRelPath());
                 if (parent.getRelPath() != null) {
-                    filler.payload(makeRelPath(parent, pr), pr.getSourcePath());
+                    builder.payload(makeRelPath(parent, pr), pr.getSourcePath());
                 } else {
-                    filler.payload(pr.getSourcePath());
+                    builder.payload(pr.getSourcePath());
                 }
             } else {
                 if (parent.getRelPath() != null) {
-                    filler.payloadRef(makeRelPath(parent, pr), pr.getSourcePath(), location.get());
+                    builder.payloadRef(makeRelPath(parent, pr), pr.getSourcePath(), location.get());
                 } else {
-                    filler.payloadRef(pr.getFileName(), pr.getSourcePath(), location.get());
+                    builder.payloadRef(pr.getFileName(), pr.getSourcePath(), location.get());
                 }
             }
         } else {
             for (TreeItem<PathRef> pti : ti.getChildren()) {
                 System.out.println("in folder children");
-                fillPayload(pti, filler);
+                fillPayload(pti, builder);
             }
         }
     }
