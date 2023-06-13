@@ -25,6 +25,13 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("GH_TOKEN")
         }
     }
+    maven {
+        url = uri("https://maven.pkg.github.com/richardrodgers/bagmatic")
+        credentials {
+            username = project.findProperty("gpr.user") ?: "richardrodgers"
+            password = project.findProperty("gpr.key") ?: System.getenv("GH_TOKEN")
+        }
+    }
 }
 
 java {
@@ -44,7 +51,8 @@ ext {
 }
 
 dependencies {
-    implementation 'org.modrepo:packr:1.0'
+    implementation 'org.modrepo:packr:1.2'
+    implementation 'org.modrepo:bagmatic:1.1'
     implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.12.0'
     implementation 'org.controlsfx:controlsfx:11.1.2'
 }
