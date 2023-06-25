@@ -1,6 +1,6 @@
 /**
- * Copyright 2023 MIT Richard Rodgers
- * Licensed under: http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright 2023 Richard Rodgers
+ * SPDX-Licence-Identifier: Apache-2.0
  */
 package org.modrepo.handbag;
 
@@ -12,8 +12,6 @@ import javafx.beans.value.ObservableValue;
 
 /**
  * Value class specification of a metadata property
- *
- * @author richardrodgers
  */
 
 public class MetadataItem implements PropertySheet.Item {

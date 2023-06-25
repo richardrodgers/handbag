@@ -14,6 +14,8 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.util.Callback;
 
 import java.io.File;
@@ -23,29 +25,48 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.ResourceBundle;
 
 import org.controlsfx.control.PropertySheet;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 
+import org.modrepo.packr.Bag;
 import org.modrepo.packr.BagBuilder;
 import org.modrepo.packr.Serde;
-
+import org.modrepo.packr.BagBuilder.EolRule;
 import org.modrepo.handbag.model.MetadataAssembler;
 
 public class Controller {
 
+    @FXML private AccordionDP settings;
+    @FXML private TextField bagNameField;
+    @FXML private TextField destField;
+    @FXML private Button destBrowse;
+    @FXML private CheckBox destReuse;
+    @FXML private ChoiceBox<String> pkgFormats;
+    @FXML private CheckBox resMdBox;
+    @FXML private CheckBox retainMdBox;
+    @FXML private TextField profileField;
+    @FXML private Button profileBrowse;
+    @FXML private Button profileClear;
     @FXML private Label workflowLabel;
-    @FXML private ChoiceBox<Workflow> workflowChoiceBox;
+   // @FXML private ChoiceBox<Workflow> workflowChoiceBox;
+    @FXML private TextField logField;
+    @FXML private Button logBrowse;
+    @FXML private CheckBox logAppend;
+    @FXML private ChoiceBox<String> textEncs;
+    @FXML private ChoiceBox<String> eolRules;
     @FXML private Label bagLabel;
     @FXML private Label bagSizeLabel;
     @FXML private Button sendButton;
@@ -53,6 +74,8 @@ public class Controller {
     @FXML private TreeView<PathRef> payloadTreeView;
     @FXML private TreeView<PathRef> tagTreeView;
     @FXML private PropertySheet metadataPropertySheet;
+    @FXML private TitledPane basicPane;
+    @FXML private ResourceBundle resources;
 
     // flags for state of metadata editing
     // - clean means no edits have been performed
@@ -62,29 +85,65 @@ public class Controller {
     private boolean gooeyMetadata = false;
     private boolean completeMetadata = false;
     private long bagSize = 0L;
-    private String bagName;
     private int counter = 0;
-    private String agent = "anon";
-    private Map<String, String> appProps;
     private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
     private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
-
-    public void setAgent(String agent) {
-        this.agent = agent;
-        Event.fireEvent(workflowChoiceBox, new ActionEvent("agent", null));
-    }
-
-    public void setAppProperties(Map<String, String> props) {
-        appProps = props;
-    }
+    private TextField dispatcherField = new TextField();
+    private List<CheckBox> chkSumAlgs;
 
     public void initialize() {
 
-        Image wfIm = new Image(getClass().getResourceAsStream("/SiteMap.png"));
+        // Basic settings
+        resMdBox.setIndeterminate(false);
+
+        pkgFormats.getItems().addAll("zip", "tar", "tgz");
+        pkgFormats.setValue("zip");
+
+        destBrowse.setOnAction(e -> chooseLocalDir(destField));
+        destReuse.setSelected(true);
+
+        resMdBox.setSelected(true);
+        retainMdBox.setSelected(true);
+
+        profileBrowse.setOnAction(e -> chooseLocalFile(profileField));
+        profileClear.setOnAction(e -> profileField.clear());
+
+        // Feature settings
+        logBrowse.setOnAction(e -> chooseLocalDir(logField));
+        logAppend.setSelected(true);
+
+        // Advanced settings
+        // FIXME
+        chkSumAlgs = List.of(new CheckBox("sha512"), new CheckBox("sha256"),
+                             new CheckBox("sha1"), new CheckBox("md5"));
+        chkSumAlgs.get(0).setSelected(true);
+
+        textEncs.getItems().addAll("UTF-8", "UTF-16");
+        textEncs.setValue("UTF-8");
+
+        var rules = Arrays.asList(BagBuilder.EolRule.values()).stream()
+                    .map(r -> r.toString()).toList();
+        eolRules.getItems().addAll(rules);
+        eolRules.setValue("SYSTEM");
+
+        // Information settings
+        /* 
+        Label bagitVersion = new Label("BagIt Specification Version: " + Bag.bagItVersion());
+        Label libVersion = new Label("Bag Handler Software Version: " + Bag.libVersion());
+        */
+
+        settings.setExpandedPane(basicPane);
+
+        Image wfIm = new Image(getClass().getResourceAsStream("/SiteMap.png"), 90, 90, false, false);
         workflowLabel.setGraphic(new ImageView(wfIm));
         workflowLabel.setContentDisplay(ContentDisplay.BOTTOM);
 
-        workflowChoiceBox.addEventHandler(ActionEvent.ACTION, event -> {
+        destField.setOnAction(e -> reset(false));
+
+        var bagText = bagNameField.getText();
+        bagLabel.setText(bagText.isEmpty() ? "Bag" : bagText);
+        /* 
+        workflowChoiceBox.addEventHandler(Act)ionEvent.ACTION, event -> {
             if (workflowChoiceBox.getItems().size() != 0) {
                 return;
             }
@@ -104,19 +163,21 @@ public class Controller {
                 }
             });
         });
+        */
 
-        Image bagIm = new Image(getClass().getResourceAsStream("/Bag.png"));
+        Image bagIm = new Image(getClass().getResourceAsStream("/Bag.png"), 90, 90, false, false);
         bagLabel.setGraphic(new ImageView(bagIm));
         bagLabel.setContentDisplay(ContentDisplay.BOTTOM);
 
-        Image sendIm = new Image(getClass().getResourceAsStream("/Cabinet.png"));
+        Image sendIm = new Image(getClass().getResourceAsStream("/Cabinet.png"), 90, 90, false, false);
         sendButton.setGraphic(new ImageView(sendIm));
         sendButton.setContentDisplay(ContentDisplay.BOTTOM);
-        sendButton.setDisable(true);
+        sendButton.setDisable(destField.getLength() == 0);
         sendButton.setOnAction(e -> transmitBag());
 
-        Image trashIm = new Image(getClass().getResourceAsStream("/Bin.png"));
+        Image trashIm = new Image(getClass().getResourceAsStream("/Bin.png"), 90, 90, false, false);
         trashButton.setGraphic(new ImageView(trashIm));
+        trashButton.setTooltip(new Tooltip(resources.getString("trashTip")));
         trashButton.setContentDisplay(ContentDisplay.BOTTOM);
         trashButton.setDisable(true);
         trashButton.setOnAction(e -> reset(false));
@@ -224,11 +285,23 @@ public class Controller {
 
     private void transmitBag() {
         try {
-            URI destUri = new URL(workflowChoiceBox.getValue().getDestinationUrl()).toURI();
-            String pkgFormat = workflowChoiceBox.getValue().getPackageFormat();
-            boolean localDest = destUri.getScheme().startsWith("file");
-            Path destDir = Paths.get(destUri);
-            var builder = localDest ? new BagBuilder(destDir.resolve(bagName)) : new BagBuilder();
+            URI destUri = new URL(destField.getText()).toURI();
+            boolean isLocalDest = destUri.getScheme().startsWith("file");
+            BagBuilder builder = null;
+            if (isLocalDest) {
+                Path destDir = Paths.get(destUri);
+                builder = new BagBuilder(destDir.resolve(bagNameField.getText()),
+                          Charset.forName(textEncs.getValue()),
+                          EolRule.valueOf(eolRules.getValue()),
+                          false,
+                          chkSumAlgs.stream()
+                          .filter(cb -> cb.isSelected())
+                          .map(cb -> csAlgoCode(cb.getText()))
+                          .toList().toArray(new String[0]));
+            } else {
+                // TODO - set staging dir
+                builder = new BagBuilder();
+            }
             // add payload files
             for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
                 fillPayload(ti, builder);
@@ -249,9 +322,9 @@ public class Controller {
                     builder.metadata(item.getRealName(), item.getValue());
                 }
             }
-            if (localDest) {
+            if (isLocalDest) {
                 // TODO - set notime param via config
-                Serde.toPackage(builder.build(), pkgFormat, false, Optional.empty() );
+                Serde.toPackage(builder.build(), pkgFormats.getValue(), false, Optional.empty() );
             } else {
                 // send to URL - TODO
             }
@@ -296,6 +369,15 @@ public class Controller {
         }
     }
 
+    private String csAlgoCode(String csAlgol) {
+        String csa = csAlgol.toUpperCase();
+        if (csa.startsWith("SHA") && csa.indexOf("-") == -1) {
+            return "SHA-" + csa.substring(3);
+        } else {
+            return csa;
+        }
+    }
+
     // reset payload and metadata to ready state (respecting stickiness if requested)
     private void reset(boolean keepStickies) {
         payloadTreeView.getRoot().getChildren().clear();
@@ -307,6 +389,7 @@ public class Controller {
         gooeyMetadata = false;
         boolean anyNeeded = false;
         int i = 0;
+        /* 
         for (MetadataSpec spec : workflowChoiceBox.getValue().getMetadata()) {
             if (! spec.isOptional() && spec.needsValue()) {
                 anyNeeded = true;
@@ -320,12 +403,13 @@ public class Controller {
             items.add(item);
             i++;
         }
+        */
         completeMetadata = ! anyNeeded;
         updateButtons();
         bagSize = 0L;
         bagSizeLabel.setText("[empty]");
-        generateBagName(workflowChoiceBox.getValue().getBagNameGenerator());
-        bagLabel.setText(bagName);
+        //generateBagName(workflowChoiceBox.getValue().getBagNameGenerator());
+        bagLabel.setText(bagNameField.getText());
     }
 
     // check and update disabled state of buttons based on application state
@@ -333,7 +417,7 @@ public class Controller {
         boolean empty = payloadTreeView.getRoot().getChildren().size() == 0;
         trashButton.setDisable(empty && cleanMetadata && ! gooeyMetadata);
         sendButton.setDisable(empty || ! completeMetadata);
-        workflowChoiceBox.setDisable(! (empty && cleanMetadata));
+        //workflowChoiceBox.setDisable(! (empty && cleanMetadata));
     }
 
     private void setMetadataList(Workflow wf) {
@@ -351,9 +435,7 @@ public class Controller {
     }
 
     private List<Workflow> loadWorkflows() {
-        // get list of agent-specific installed workflows first, then load each one.
-        // It there is dispatcher web service, use it, else look in local JSON resource files
-        String dispatcherUrl = appProps.get("dispatcher");
+        String dispatcherUrl = dispatcherField.getText();
         List<Workflow> workflows = new ArrayList<>();
         try {
             List<String> workflowIds = getWorkflowIds(dispatcherUrl);
@@ -377,7 +459,7 @@ public class Controller {
     private List<String> getWorkflowIds(String dispatcherUrl) throws IOException {
         List<String> wfIdList = null;
         if (dispatcherUrl == null) {
-            wfIdList = JSON.std.listOfFrom(String.class, getClass().getResourceAsStream("/" + agent + ".json"));
+            wfIdList = JSON.std.listOfFrom(String.class, getClass().getResourceAsStream("/" + "work" + ".json"));
         } else {
             try (InputStream in = new URL(dispatcherUrl).openConnection().getInputStream()) {
                 wfIdList = JSON.std.listOfFrom(String.class, in);
@@ -386,9 +468,27 @@ public class Controller {
         return wfIdList;
     }
 
+    private void chooseLocalDir(TextField field) {
+        var chooser = new DirectoryChooser();
+        File dir = chooser.showDialog(null);
+        try {
+           field.setText(dir.getCanonicalPath());
+        } catch (Exception e) {}
+    }
+
+     private void chooseLocalFile(TextField field) {
+        var chooser = new FileChooser();
+        File log = chooser.showOpenDialog(null);
+        try {
+            field.setText(log.getCanonicalPath());
+        } catch (Exception e) {}
+    }
+
+    /* 
     private void generateBagName(String generator) {
         bagName = "transfer." + counter++;
     }
+    */
 
     private final class TextFieldTreeCellImpl extends TreeCell<PathRef> {
  
