@@ -2,51 +2,110 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import org.controlsfx.control.PropertySheet?>
+<?import org.modrepo.handbag.AccordionDP?>
 
 <AnchorPane fx:controller="org.modrepo.handbag.Controller"
       xmlns:fx="http://javafx.com/fxml" minWidth="1000" minHeight="700">
-    <VBox AnchorPane.topAnchor="0" AnchorPane.leftAnchor="2" AnchorPane.rightAnchor="2" AnchorPane.bottomAnchor="0">
-        <Separator/>
-        <HBox>
-            <VBox>
-                <Label fx:id="workflowLabel" text="Workflow"/>
-            <!--  <ChoiceBox fx:id="workflowChoiceBox"/> -->
-            </VBox>
+    <VBox>
+        <HBox AnchorPane.topAnchor="0" AnchorPane.leftAnchor="2" AnchorPane.rightAnchor="2" AnchorPane.bottomAnchor="0">
+            <TabPane tabClosingPolicy="UNAVAILABLE">
+                <Tab text="%settingsText">
+                    <AccordionDP fx:id="settings">
+                        <TitledPane fx:id="basicPane" text="%settingsBasic">
+                            <VBox spacing="8">
+                                <HBox spacing="6">
+                                    <Label text="Bag Name"/>
+                                    <TextField fx:id="bagNameField"/>
+                                </HBox>
+                                <HBox spacing="6">
+                                    <Label text="Destination"/>
+                                    <TextField fx:id="destField"/>
+                                    <Button fx:id="destBrowse" text="Browse"/>
+                                    <CheckBox fx:id="destReuse" text="Reuse"/>
+                                </HBox>
+                                <HBox spacing="6">
+                                    <Label text="Package Format"/>
+                                    <ChoiceBox fx:id="pkgFormats"/>
+                                </HBox>
+                                <CheckBox fx:id="resMdBox" text="%includeReserved"/>
+                                <CheckBox fx:id="retainMdBox" text="%retainMetadata"/>
+                                <HBox spacing="6">
+                                    <Label text="Profile"/>
+                                    <TextField fx:id="profileField"/>
+                                    <Button fx:id="profileBrowse" text="Browse"/>
+                                    <Button fx:id="profileClear" text="Clear"/>
+                                </HBox>
+                            </VBox>
+                        </TitledPane>
+                        <TitledPane text="%settingsFeature">
+                            <VBox spacing="8">
+                                <HBox spacing="6">
+                                    <Label text="Activity Log"/>
+                                    <TextField fx:id="logField"/>
+                                    <Button fx:id="logBrowse" text="Browse"/>
+                                    <CheckBox fx:id="logAppend" text="Append"/>
+                                </HBox>
+                            </VBox>
+                        </TitledPane>
+                        <TitledPane text="%settingsAdvanced">
+                            <VBox spacing="8">
+                                <Label text="Warning! Do not change unless fully understood!"/>
+                                <HBox spacing="6">
+                                    <Label text="Checksum Algorithms"/>
+                                    <CheckBox text="sha512"/>
+                                    <CheckBox text="sha256"/>
+                                    <CheckBox text="sha1"/>
+                                    <CheckBox text="md5"/>
+                                </HBox>
+                                <HBox spacing="6">
+                                    <Label text="Text Encoding"/>
+                                    <ChoiceBox fx:id="textEncs"/>
+                                </HBox>
+                                <HBox spacing="6">
+                                    <Label text="Line Separator"/>
+                                    <ChoiceBox fx:id="eolRules"/>
+                                </HBox>
+                            </VBox>
+                        </TitledPane>
+                        <TitledPane text="%settingsInfo">
+                            <VBox spacing="8">
+                                <Label text="%infoSpecVersion"/>
+                                <Label text="%infoHandlerVersion"/>
+                            </VBox>
+                        </TitledPane>
+                    </AccordionDP>
+                </Tab>
+                <Tab text="%payloadTab">
+                    <TreeView fx:id="payloadTreeView"/>
+                </Tab>
+                <Tab text="%tagTab">
+                    <TreeView fx:id="tagTreeView"/>
+                </Tab>
+                <Tab text="%fetchTab">
+                </Tab>
+                <Tab text="%metadataTab">
+                    <VBox>
+                        <PropertySheet fx:id="metadataPropertySheet"/>
+                        <Separator/>
+                        <Label text="* = optional ! = sticky"/>
+                    </VBox>
+                <!-- <ListView fx:id="metadataListView"/>  -->
+                </Tab>
+            </TabPane>
             <Separator/>
-            <VBox>
+            <VBox> <!-- list of buttons and labels -->
+                <Separator/>
                 <Label fx:id="bagLabel" text="Bag"/>
                 <Label fx:id="bagSizeLabel" text="[empty]"/>
-                <!-- <ProgressBar/>  -->
+            <!-- <ProgressBar/>  -->
+                <Separator/>
+                <Button fx:id="sendButton" text="Destination"/>
+                <Button fx:id="trashButton" text="%trashText"/>
+                <Separator/>
+                <Label fx:id="workflowLabel" text="Job"/>
+            <!--  <ChoiceBox fx:id="workflowChoiceBox"/> -->
             </VBox>
-            <Separator/>
-            <Button fx:id="sendButton" text="Destination"/>
-            <Button fx:id="trashButton" text="Trash"/>
         </HBox>
-        <Separator/>
-        <TabPane tabClosingPolicy="UNAVAILABLE">
-            <Tab text="Delivery">
-                <VBox>
-                    <ChoiceBox fx:id="workflowChoiceBox"/>
-                    <Separator/>
-                    <HBox>
-                        <Label text="Destination"/>
-                    </HBox>
-                </VBox>
-            </Tab>
-            <Tab text="Payload Files">
-                <TreeView fx:id="payloadTreeView"/>
-            </Tab>
-            <Tab text="Tag Files">
-                <TreeView fx:id="tagTreeView"/>
-            </Tab>
-            <Tab text="Metadata">
-                <VBox>
-                    <PropertySheet fx:id="metadataPropertySheet"/>
-                    <Separator/>
-                    <Label text="* = optional ! = sticky"/>
-                </VBox>
-                <!-- <ListView fx:id="metadataListView"/>  -->
-            </Tab>
-        </TabPane>
+        <Label text="Console Log"/>
     </VBox>
 </AnchorPane>
