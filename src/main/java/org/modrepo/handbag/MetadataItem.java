@@ -4,9 +4,13 @@
  */
 package org.modrepo.handbag;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.controlsfx.control.PropertySheet;
+
+import org.modrepo.bagmatic.impl.profile.BagitTagConstraint;
 
 import javafx.beans.value.ObservableValue;
 
@@ -18,20 +22,20 @@ public class MetadataItem implements PropertySheet.Item {
     private String name;
     private String realName;
     private String value;
-    private boolean optional;
-    private boolean sticky;
+    private BagitTagConstraint constraint;
 
-    public MetadataItem(MetadataSpec spec) {
-        this.realName = spec.getName();
-        this.optional = spec.isOptional();
-        this.sticky = spec.isSticky();
-        String baseName = sticky ? ("!" + realName) : realName;
-        this.name = optional ? ("*" + baseName) : baseName;
-        if (spec.getPresetValue() != null) {
-            this.value = spec.getPresetValue();
-        } else if (spec.getDefaultValue() != null) {
-            this.value = spec.getDefaultValue();
-        }
+    public MetadataItem(Map.Entry<String,BagitTagConstraint> entry) {
+        this.realName = entry.getKey();
+        //this.value = btc.getValues().get(0);
+        // FIX
+        this.name = realName;
+        this.constraint = entry.getValue();
+    }
+
+    public MetadataItem(String name, BagitTagConstraint constraint) {
+        this.realName = name;
+        this.name = name;
+        this.constraint = constraint;
     }
 
     @Override
@@ -52,12 +56,12 @@ public class MetadataItem implements PropertySheet.Item {
         return realName;
     }
 
-    public boolean isOptional() {
-        return optional;
+    public boolean isRequired() {
+        return constraint.isRequired();
     }
 
-    public boolean isSticky() {
-        return sticky;
+    public boolean isRepeatable() {
+        return constraint.isRepeatable();
     }
 
     @Override
@@ -71,6 +75,10 @@ public class MetadataItem implements PropertySheet.Item {
 
     public String getValue() {
         return value;
+    }
+
+    public List<String> getPermitted() {
+        return constraint.getValues();
     }
 
     @Override

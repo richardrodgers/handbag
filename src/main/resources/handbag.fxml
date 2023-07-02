@@ -27,18 +27,29 @@
                                     <Label text="Package Format"/>
                                     <ChoiceBox fx:id="pkgFormats"/>
                                 </HBox>
+                                <Separator/>
+                                <HBox fx:id="profBox" spacing="6">
+                                    <Label text="Profile"/>
+                                    <!--<TextField fx:id="profileField" fx:factory="newInstance"/> -->
+                                    <Button fx:id="profileBrowse" text="Browse"/>
+                                </HBox>
                                 <CheckBox fx:id="resMdBox" text="%includeReserved"/>
                                 <CheckBox fx:id="retainMdBox" text="%retainMetadata"/>
-                                <HBox spacing="6">
-                                    <Label text="Profile"/>
-                                    <TextField fx:id="profileField"/>
-                                    <Button fx:id="profileBrowse" text="Browse"/>
-                                    <Button fx:id="profileClear" text="Clear"/>
-                                </HBox>
                             </VBox>
                         </TitledPane>
                         <TitledPane text="%settingsFeature">
                             <VBox spacing="8">
+                                <HBox spacing="6">
+                                    <Label text="Work Dispatch"/>
+                                    <TextField/>
+                                    <Button text="Load"/>
+                                </HBox>
+                                <HBox spacing="6">
+                                    <Label text="Active Job"/>
+                                    <ChoiceBox/>
+                                    <Button text="Clear"/>
+                                </HBox>
+                                <Separator/>
                                 <HBox spacing="6">
                                     <Label text="Activity Log"/>
                                     <TextField fx:id="logField"/>
@@ -70,7 +81,9 @@
                         <TitledPane text="%settingsInfo">
                             <VBox spacing="8">
                                 <Label text="%infoSpecVersion"/>
+                                <Label text="%infoProfileVersion"/>
                                 <Label text="%infoHandlerVersion"/>
+                                <Label text="%infoHandBagVersion"/>
                             </VBox>
                         </TitledPane>
                     </AccordionDP>
@@ -87,7 +100,12 @@
                     <VBox>
                         <PropertySheet fx:id="metadataPropertySheet"/>
                         <Separator/>
-                        <Label text="* = optional ! = sticky"/>
+                        <HBox spacing="8">
+                         <!--   <Button fx:id="repMetaButton" text="Repeat"/> -->
+                            <Button fx:id="addMetaButton" text="Add Element"/>
+                            <TextField fx:id="addMetaField"/>
+                        </HBox>
+                        <!-- <Label text="* = optional ! = sticky"/> -->
                     </VBox>
                 <!-- <ListView fx:id="metadataListView"/>  -->
                 </Tab>
@@ -106,6 +124,9 @@
             <!--  <ChoiceBox fx:id="workflowChoiceBox"/> -->
             </VBox>
         </HBox>
-        <Label text="Console Log"/>
+        <HBox spacing="4">
+            <Button fx:id="logBackButton" text="Back"/>
+            <Label fx:id="consoleLogLabel"/>
+        </HBox>
     </VBox>
 </AnchorPane>

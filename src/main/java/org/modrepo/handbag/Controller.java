@@ -14,11 +14,13 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
+import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -38,6 +40,8 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 import org.controlsfx.control.PropertySheet;
+import org.controlsfx.control.textfield.TextFields;
+import org.controlsfx.property.editor.Editors;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 
@@ -45,7 +49,13 @@ import org.modrepo.packr.Bag;
 import org.modrepo.packr.BagBuilder;
 import org.modrepo.packr.Serde;
 import org.modrepo.packr.BagBuilder.EolRule;
+import org.modrepo.bagmatic.Bagmatic;
+import org.modrepo.bagmatic.ContextBuilder;
+import org.modrepo.bagmatic.impl.profile.BagitProfile;
+import org.modrepo.bagmatic.impl.profile.BagitTagConstraint;
+import org.modrepo.bagmatic.model.Result;
 import org.modrepo.handbag.model.MetadataAssembler;
+import org.modrepo.handbag.model.WorkSpec;
 
 public class Controller {
 
@@ -59,7 +69,6 @@ public class Controller {
     @FXML private CheckBox retainMdBox;
     @FXML private TextField profileField;
     @FXML private Button profileBrowse;
-    @FXML private Button profileClear;
     @FXML private Label workflowLabel;
    // @FXML private ChoiceBox<Workflow> workflowChoiceBox;
     @FXML private TextField logField;
@@ -74,22 +83,28 @@ public class Controller {
     @FXML private TreeView<PathRef> payloadTreeView;
     @FXML private TreeView<PathRef> tagTreeView;
     @FXML private PropertySheet metadataPropertySheet;
+    @FXML private TextField addMetaField;
+    @FXML private Button addMetaButton;
+    @FXML private Button repMetaButton;
     @FXML private TitledPane basicPane;
     @FXML private ResourceBundle resources;
+    @FXML private HBox profBox;
+    @FXML private Label consoleLogLabel;
+    @FXML private Button logBackButton;
 
     // flags for state of metadata editing
     // - clean means no edits have been performed
-    // - gooey means at least one sticky field has been (re)assigned
     // - complete means all non-optional properties have values
     private boolean cleanMetadata = true;
-    private boolean gooeyMetadata = false;
     private boolean completeMetadata = false;
     private long bagSize = 0L;
     private int counter = 0;
     private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
     private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
-    private TextField dispatcherField = new TextField();
+    private TextField dispatchField = new TextField();
     private List<CheckBox> chkSumAlgs;
+    private WorkSpec workSpec;
+    private ConsoleLog consoleLog = new ConsoleLog();
 
     public void initialize() {
 
@@ -105,8 +120,9 @@ public class Controller {
         resMdBox.setSelected(true);
         retainMdBox.setSelected(true);
 
+        profileField = TextFields.createClearableTextField();
+        profBox.getChildren().add(1, profileField);
         profileBrowse.setOnAction(e -> chooseLocalFile(profileField));
-        profileClear.setOnAction(e -> profileField.clear());
 
         // Feature settings
         logBrowse.setOnAction(e -> chooseLocalDir(logField));
@@ -191,6 +207,27 @@ public class Controller {
             checkComplete(metadataPropertySheet.getItems());
             event.consume();
         });
+        metadataPropertySheet.setPropertyEditorFactory((PropertySheet.Item item) -> {
+            var mdItem = (MetadataItem)item;
+            if (mdItem.getPermitted().size() > 1) {
+                return Editors.createChoiceEditor(mdItem, mdItem.getPermitted());
+            } else {
+                return Editors.createTextEditor(mdItem);
+            }
+        });
+        // test only
+        metadataPropertySheet.getItems().addAll(getReserved());
+
+       // repMetaButton.setOnAction(e -> repeatMetaElement());
+        addMetaButton.setOnAction(e -> addMetaElement(addMetaField.getText()));
+        
+        // log display
+        consoleLogLabel.setText(consoleLog.currentEntry());
+        consoleLogLabel.addEventHandler(ActionEvent.ANY, event -> {
+            consoleLogLabel.setText(consoleLog.currentEntry());
+            event.consume();
+        });
+        logBackButton.setOnAction(e -> consoleLogLabel.setText(consoleLog.previousEntry(consoleLogLabel.getText())));
     }
 
     private void initTreeView(TreeView<PathRef> view, String root) {
@@ -273,7 +310,7 @@ public class Controller {
         for (PropertySheet.Item item : mdList) {
             MetadataItem mdItem = (MetadataItem)item;
             String value = mdItem.getValue();
-            if (! mdItem.isOptional() && (value == null || value.equals(""))) {
+            if (mdItem.isRequired() && (value == null || value.equals(""))) {
                 curComplete = false;
                 break;
             }
@@ -284,6 +321,7 @@ public class Controller {
     }
 
     private void transmitBag() {
+        System.err.println("In transmit");
         try {
             URI destUri = new URL(destField.getText()).toURI();
             boolean isLocalDest = destUri.getScheme().startsWith("file");
@@ -294,13 +332,21 @@ public class Controller {
                           Charset.forName(textEncs.getValue()),
                           EolRule.valueOf(eolRules.getValue()),
                           false,
+                          /* 
                           chkSumAlgs.stream()
                           .filter(cb -> cb.isSelected())
                           .map(cb -> csAlgoCode(cb.getText()))
-                          .toList().toArray(new String[0]));
+                          .toList().toArray(new String[0])
+                          */
+                          List.of("SHA-512").toArray(new String[0])
+                          );
             } else {
                 // TODO - set staging dir
                 builder = new BagBuilder();
+                // test only
+                consoleLog.log("Non-Local destination not implemented");
+                System.err.println("Log: " + consoleLog.currentEntry());
+                sendButton.fireEvent(new ActionEvent());
             }
             // add payload files
             for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
@@ -329,7 +375,12 @@ public class Controller {
                 // send to URL - TODO
             }
             reset(true);
-        } catch (IOException | URISyntaxException exp) {}
+        } catch (IOException | URISyntaxException exp) {
+                // test only
+                consoleLog.log("Exception thrown: " + exp.getMessage());
+                System.err.println("Log: " + consoleLog.currentEntry());
+               // sendButton.fireEvent(new ActionEvent());
+        }
     }
 
     private void fillPayload(TreeItem<PathRef> ti, BagBuilder builder) throws IOException, URISyntaxException {
@@ -355,6 +406,22 @@ public class Controller {
             for (TreeItem<PathRef> pti : ti.getChildren()) {
                 System.out.println("in folder children");
                 fillPayload(pti, builder);
+            }
+        }
+    }
+
+    private void addMetaElement(String name) {
+        var sheet = metadataPropertySheet;
+        sheet.getItems().add(new MetadataItem(name, new BagitTagConstraint(false, List.of(), true, name)));
+    }
+
+    private void repeatMetaElement() {
+        var items = metadataPropertySheet.getItems();
+        for (PropertySheet.Item item : items) {
+            if (item.isEditable()) {
+                // and has focus
+                items.add(0, new MetadataItem(item.getName(), new BagitTagConstraint(false, List.of(), true, item.getName())));
+                break;
             }
         }
     }
@@ -386,7 +453,6 @@ public class Controller {
         saveItems.addAll(items);
         items.clear();
         cleanMetadata = true;
-        gooeyMetadata = false;
         boolean anyNeeded = false;
         int i = 0;
         /* 
@@ -404,6 +470,8 @@ public class Controller {
             i++;
         }
         */
+         // test only
+        metadataPropertySheet.getItems().addAll(getReserved());
         completeMetadata = ! anyNeeded;
         updateButtons();
         bagSize = 0L;
@@ -412,14 +480,36 @@ public class Controller {
         bagLabel.setText(bagNameField.getText());
     }
 
+    // load and filter by autogen status the bagit reserved elements
+    private List<MetadataItem> getReserved() {
+        var ctxBuilder = Bagmatic.emptyBuilder();
+        try {
+            var result = ctxBuilder.addProfile(Controller.class.getResourceAsStream("/bagit-reserved-profile.json"));
+            if (result.success()) {
+                var reserved = result.getObject().build().getTagConstraints();
+                return reserved.entrySet().stream()
+                        .filter(e -> ! "autogenerated".equals(e.getValue().getDescription()))
+                        .map(MetadataItem::new).toList();
+            } else {
+                result.toConsole();
+            }
+        } catch (Exception e) {
+            // put error in console log
+            System.err.println("Ex: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return List.of();
+    }
+
     // check and update disabled state of buttons based on application state
     private void updateButtons() {
         boolean empty = payloadTreeView.getRoot().getChildren().size() == 0;
-        trashButton.setDisable(empty && cleanMetadata && ! gooeyMetadata);
+        trashButton.setDisable(empty && cleanMetadata);
         sendButton.setDisable(empty || ! completeMetadata);
         //workflowChoiceBox.setDisable(! (empty && cleanMetadata));
     }
 
+    /* 
     private void setMetadataList(Workflow wf) {
         ObservableList<PropertySheet.Item> items = metadataPropertySheet.getItems();
         items.clear();
@@ -433,27 +523,22 @@ public class Controller {
         cleanMetadata = true;
         completeMetadata = ! anyNeeded;
     }
+    */
 
-    private List<Workflow> loadWorkflows() {
-        String dispatcherUrl = dispatcherField.getText();
+    private WorkSpec loadWork() {
+        String dispatchAddr = dispatchField.getText();
         List<Workflow> workflows = new ArrayList<>();
+        // Could be in local filesystem or URL or bundled in resources?
         try {
-            List<String> workflowIds = getWorkflowIds(dispatcherUrl);
-            for (String wfFile : workflowIds) {
-                Workflow wf = null;
-                if (dispatcherUrl != null) {
-                    try (InputStream in = new URL(dispatcherUrl).openConnection().getInputStream()) {
-                        wf = JSON.std.beanFrom(Workflow.class, in);
-                    }
-                } else {
-                    wf = JSON.std.beanFrom(Workflow.class, getClass().getResourceAsStream("/" + wfFile));
-                }
-                workflows.add(wf);
+            if (dispatchAddr.startsWith("http")) {
+                // dereference URL
+            } else {
+                workSpec = JSON.std.beanFrom(WorkSpec.class, new FileInputStream(dispatchAddr));
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return workflows;
+        return workSpec;
     }
 
     private List<String> getWorkflowIds(String dispatcherUrl) throws IOException {
