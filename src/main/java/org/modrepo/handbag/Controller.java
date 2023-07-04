@@ -22,7 +22,6 @@ import javafx.util.Callback;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -39,23 +38,27 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.textfield.TextFields;
 import org.controlsfx.property.editor.Editors;
-
-import com.fasterxml.jackson.jr.ob.JSON;
 
 import org.modrepo.packr.Bag;
 import org.modrepo.packr.BagBuilder;
 import org.modrepo.packr.Serde;
 import org.modrepo.packr.BagBuilder.EolRule;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.modrepo.bagmatic.Bagmatic;
 import org.modrepo.bagmatic.ContextBuilder;
 import org.modrepo.bagmatic.impl.profile.BagitProfile;
 import org.modrepo.bagmatic.impl.profile.BagitTagConstraint;
 import org.modrepo.bagmatic.model.Result;
-import org.modrepo.handbag.model.MetadataAssembler;
+import org.modrepo.handbag.model.JobSpec;
 import org.modrepo.handbag.model.WorkSpec;
+
+import com.sandec.mdfx.MarkdownView;
 
 public class Controller {
 
@@ -70,10 +73,14 @@ public class Controller {
     @FXML private TextField profileField;
     @FXML private Button profileBrowse;
     @FXML private Label workflowLabel;
-   // @FXML private ChoiceBox<Workflow> workflowChoiceBox;
+    @FXML private Label jobNameLabel;
+    @FXML private TextField dispatchField;
+    @FXML private Button loadWorkButton;
+    @FXML private ChoiceBox<String> activeJobBox;
     @FXML private TextField logField;
     @FXML private Button logBrowse;
     @FXML private CheckBox logAppend;
+    @FXML private CheckComboBox<String> chksumAlgs;
     @FXML private ChoiceBox<String> textEncs;
     @FXML private ChoiceBox<String> eolRules;
     @FXML private Label bagLabel;
@@ -91,6 +98,7 @@ public class Controller {
     @FXML private HBox profBox;
     @FXML private Label consoleLogLabel;
     @FXML private Button logBackButton;
+    @FXML private MarkdownView manualView;
 
     // flags for state of metadata editing
     // - clean means no edits have been performed
@@ -101,10 +109,9 @@ public class Controller {
     private int counter = 0;
     private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
     private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
-    private TextField dispatchField = new TextField();
-    private List<CheckBox> chkSumAlgs;
     private WorkSpec workSpec;
     private ConsoleLog consoleLog = new ConsoleLog();
+    private List<String> chksums = List.of("sha512", "sha256", "sha1", "md5");
 
     public void initialize() {
 
@@ -125,14 +132,20 @@ public class Controller {
         profileBrowse.setOnAction(e -> chooseLocalFile(profileField));
 
         // Feature settings
+        loadWorkButton.setOnAction(e -> loadWork());
+        activeJobBox.getSelectionModel().selectedIndexProperty().addListener(
+            (ov, oldVal, newVal) -> 
+                {jobNameLabel.setText(activeJobBox.getItems().get(newVal.intValue()));
+        });
+
         logBrowse.setOnAction(e -> chooseLocalDir(logField));
         logAppend.setSelected(true);
 
         // Advanced settings
-        // FIXME
-        chkSumAlgs = List.of(new CheckBox("sha512"), new CheckBox("sha256"),
-                             new CheckBox("sha1"), new CheckBox("md5"));
-        chkSumAlgs.get(0).setSelected(true);
+        ObservableList<String> algs = FXCollections.observableArrayList();
+        algs.addAll(chksums);
+        chksumAlgs.getItems().addAll(algs);
+        chksumAlgs.getCheckModel().check(0); // default to sha512
 
         textEncs.getItems().addAll("UTF-8", "UTF-16");
         textEncs.setValue("UTF-8");
@@ -143,11 +156,6 @@ public class Controller {
         eolRules.setValue("SYSTEM");
 
         // Information settings
-        /* 
-        Label bagitVersion = new Label("BagIt Specification Version: " + Bag.bagItVersion());
-        Label libVersion = new Label("Bag Handler Software Version: " + Bag.libVersion());
-        */
-
         settings.setExpandedPane(basicPane);
 
         Image wfIm = new Image(getClass().getResourceAsStream("/SiteMap.png"), 90, 90, false, false);
@@ -228,6 +236,11 @@ public class Controller {
             event.consume();
         });
         logBackButton.setOnAction(e -> consoleLogLabel.setText(consoleLog.previousEntry(consoleLogLabel.getText())));
+
+        try {
+            var manPath = Paths.get(getClass().getResource("/manual_en.md").toURI());
+            manualView.setMdString(new String(Files.readAllBytes(manPath)));
+        } catch (Exception e) {}
     }
 
     private void initTreeView(TreeView<PathRef> view, String root) {
@@ -332,13 +345,9 @@ public class Controller {
                           Charset.forName(textEncs.getValue()),
                           EolRule.valueOf(eolRules.getValue()),
                           false,
-                          /* 
-                          chkSumAlgs.stream()
-                          .filter(cb -> cb.isSelected())
-                          .map(cb -> csAlgoCode(cb.getText()))
+                          chksumAlgs.getCheckModel().getCheckedIndices().stream()
+                          .map(idx -> csAlgoCode(chksums.get(idx)))
                           .toList().toArray(new String[0])
-                          */
-                          List.of("SHA-512").toArray(new String[0])
                           );
             } else {
                 // TODO - set staging dir
@@ -445,7 +454,7 @@ public class Controller {
         }
     }
 
-    // reset payload and metadata to ready state (respecting stickiness if requested)
+    // reset payload and metadata to ready state
     private void reset(boolean keepStickies) {
         payloadTreeView.getRoot().getChildren().clear();
         ObservableList<PropertySheet.Item> items = metadataPropertySheet.getItems();
@@ -527,30 +536,34 @@ public class Controller {
 
     private WorkSpec loadWork() {
         String dispatchAddr = dispatchField.getText();
-        List<Workflow> workflows = new ArrayList<>();
         // Could be in local filesystem or URL or bundled in resources?
+        System.err.println("Addr: " + dispatchAddr);
         try {
             if (dispatchAddr.startsWith("http")) {
-                // dereference URL
+                ; // dereference URL
             } else {
-                workSpec = JSON.std.beanFrom(WorkSpec.class, new FileInputStream(dispatchAddr));
+                var mapper = new ObjectMapper();
+                workSpec = mapper.readValue(new FileInputStream(dispatchAddr), WorkSpec.class);
             }
+            // eagerly load jobs from spec
+            for (JobSpec jspec: workSpec.jobs) {
+                loadJob(jspec);
+            }
+            // populate active jobs choicebox
+            activeJobBox.getItems().addAll(
+                workSpec.jobs.stream()
+                .map(j -> j.name)
+                .toList().toArray(new String[0])
+            );
+
         } catch (IOException e) {
             e.printStackTrace();
         }
         return workSpec;
     }
 
-    private List<String> getWorkflowIds(String dispatcherUrl) throws IOException {
-        List<String> wfIdList = null;
-        if (dispatcherUrl == null) {
-            wfIdList = JSON.std.listOfFrom(String.class, getClass().getResourceAsStream("/" + "work" + ".json"));
-        } else {
-            try (InputStream in = new URL(dispatcherUrl).openConnection().getInputStream()) {
-                wfIdList = JSON.std.listOfFrom(String.class, in);
-            }
-        }
-        return wfIdList;
+    private void loadJob(JobSpec spec) {
+
     }
 
     private void chooseLocalDir(TextField field) {

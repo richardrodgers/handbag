@@ -32,6 +32,9 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("GH_TOKEN")
         }
     }
+     maven {
+        url "https://sandec.jfrog.io/artifactory/repo"
+    }
 }
 
 java {
@@ -53,6 +56,8 @@ ext {
 dependencies {
     implementation 'org.modrepo:packr:1.2'
     implementation 'org.modrepo:bagmatic:1.2'
-    implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.12.0'
     implementation 'org.controlsfx:controlsfx:11.1.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+    implementation 'org.hibernate.validator:hibernate-validator:8.0.0.Final'
+    implementation 'com.sandec:mdfx:0.2.12'
 }
