@@ -4,7 +4,10 @@
  */
 package org.modrepo.handbag.model;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Value class holding information about a work specification/order.
@@ -19,7 +22,9 @@ public class WorkSpec {
     private String destinationUrl;
     private String bagNameGenerator;
     private String packageFormat;
-    private List<JobSpec> jobs;
+
+    @JsonProperty("jobs")
+    public List<JobSpec> jobs = new ArrayList<>();
 
     public WorkSpec() {
     }

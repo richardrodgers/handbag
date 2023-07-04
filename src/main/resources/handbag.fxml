@@ -2,6 +2,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import org.controlsfx.control.PropertySheet?>
+<?import org.controlsfx.control.CheckComboBox?>
+<?import com.sandec.mdfx.MarkdownView?>
 <?import org.modrepo.handbag.AccordionDP?>
 
 <AnchorPane fx:controller="org.modrepo.handbag.Controller"
@@ -41,14 +43,17 @@
                             <VBox spacing="8">
                                 <HBox spacing="6">
                                     <Label text="Work Dispatch"/>
-                                    <TextField/>
-                                    <Button text="Load"/>
+                                    <TextField fx:id="dispatchField"/>
+                                    <Button fx:id="loadWorkButton" text="Load"/>
                                 </HBox>
                                 <HBox spacing="6">
                                     <Label text="Active Job"/>
-                                    <ChoiceBox/>
+                                    <ChoiceBox fx:id="activeJobBox"/>
                                     <Button text="Clear"/>
                                 </HBox>
+                                <Separator/>
+                                <CheckBox text="Map Payload Source Path"/>
+                                <CheckBox text="Capture Payload Source Metadata"/>
                                 <Separator/>
                                 <HBox spacing="6">
                                     <Label text="Activity Log"/>
@@ -63,10 +68,7 @@
                                 <Label text="Warning! Do not change unless fully understood!"/>
                                 <HBox spacing="6">
                                     <Label text="Checksum Algorithms"/>
-                                    <CheckBox text="sha512"/>
-                                    <CheckBox text="sha256"/>
-                                    <CheckBox text="sha1"/>
-                                    <CheckBox text="md5"/>
+                                    <CheckComboBox fx:id="chksumAlgs"/>
                                 </HBox>
                                 <HBox spacing="6">
                                     <Label text="Text Encoding"/>
@@ -82,7 +84,8 @@
                             <VBox spacing="8">
                                 <Label text="%infoSpecVersion"/>
                                 <Label text="%infoProfileVersion"/>
-                                <Label text="%infoHandlerVersion"/>
+                                <Label text="%infoPackrVersion"/>
+                                <Label text="%infoBagmaticVersion"/>
                                 <Label text="%infoHandBagVersion"/>
                             </VBox>
                         </TitledPane>
@@ -105,9 +108,10 @@
                             <Button fx:id="addMetaButton" text="Add Element"/>
                             <TextField fx:id="addMetaField"/>
                         </HBox>
-                        <!-- <Label text="* = optional ! = sticky"/> -->
                     </VBox>
-                <!-- <ListView fx:id="metadataListView"/>  -->
+                </Tab>
+                <Tab text="User Guide">
+                    <MarkdownView fx:id="manualView"/>
                 </Tab>
             </TabPane>
             <Separator/>
@@ -117,11 +121,12 @@
                 <Label fx:id="bagSizeLabel" text="[empty]"/>
             <!-- <ProgressBar/>  -->
                 <Separator/>
+                <Label fx:id="workflowLabel" text="Job"/>
+                <Label fx:id="jobNameLabel" text="[none]"/>
+                <Separator/>
                 <Button fx:id="sendButton" text="Destination"/>
                 <Button fx:id="trashButton" text="%trashText"/>
                 <Separator/>
-                <Label fx:id="workflowLabel" text="Job"/>
-            <!--  <ChoiceBox fx:id="workflowChoiceBox"/> -->
             </VBox>
         </HBox>
         <HBox spacing="4">
