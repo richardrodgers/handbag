@@ -31,7 +31,12 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -66,7 +71,6 @@ public class Controller {
     @FXML private TextField bagNameField;
     @FXML private TextField destField;
     @FXML private Button destBrowse;
-    @FXML private CheckBox destReuse;
     @FXML private ChoiceBox<String> pkgFormats;
     @FXML private CheckBox resMdBox;
     @FXML private CheckBox retainMdBox;
@@ -77,6 +81,8 @@ public class Controller {
     @FXML private TextField dispatchField;
     @FXML private Button loadWorkButton;
     @FXML private ChoiceBox<String> activeJobBox;
+    @FXML private CheckBox mapPayload;
+    @FXML private CheckBox metaPayload;
     @FXML private TextField logField;
     @FXML private Button logBrowse;
     @FXML private CheckBox logAppend;
@@ -97,6 +103,7 @@ public class Controller {
     @FXML private ResourceBundle resources;
     @FXML private HBox profBox;
     @FXML private Label consoleLogLabel;
+    @FXML private Button logTopButton;
     @FXML private Button logBackButton;
     @FXML private MarkdownView manualView;
 
@@ -110,7 +117,7 @@ public class Controller {
     private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
     private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
     private WorkSpec workSpec;
-    private ConsoleLog consoleLog = new ConsoleLog();
+    private Logger logger = new Logger();
     private List<String> chksums = List.of("sha512", "sha256", "sha1", "md5");
 
     public void initialize() {
@@ -122,7 +129,6 @@ public class Controller {
         pkgFormats.setValue("zip");
 
         destBrowse.setOnAction(e -> chooseLocalDir(destField));
-        destReuse.setSelected(true);
 
         resMdBox.setSelected(true);
         retainMdBox.setSelected(true);
@@ -230,12 +236,12 @@ public class Controller {
         addMetaButton.setOnAction(e -> addMetaElement(addMetaField.getText()));
         
         // log display
-        consoleLogLabel.setText(consoleLog.currentEntry());
+        consoleLogLabel.setText(logger.currentEntry());
         consoleLogLabel.addEventHandler(ActionEvent.ANY, event -> {
-            consoleLogLabel.setText(consoleLog.currentEntry());
+            consoleLogLabel.setText(logger.currentEntry());
             event.consume();
         });
-        logBackButton.setOnAction(e -> consoleLogLabel.setText(consoleLog.previousEntry(consoleLogLabel.getText())));
+        logBackButton.setOnAction(e -> consoleLogLabel.setText(logger.previousEntry(consoleLogLabel.getText())));
 
         try {
             var manPath = Paths.get(getClass().getResource("/manual_en.md").toURI());
@@ -353,8 +359,8 @@ public class Controller {
                 // TODO - set staging dir
                 builder = new BagBuilder();
                 // test only
-                consoleLog.log("Non-Local destination not implemented");
-                System.err.println("Log: " + consoleLog.currentEntry());
+                logger.log("Non-Local destination not implemented");
+                System.err.println("Log: " + logger.currentEntry());
                 sendButton.fireEvent(new ActionEvent());
             }
             // add payload files
@@ -379,15 +385,18 @@ public class Controller {
             }
             if (isLocalDest) {
                 // TODO - set notime param via config
-                Serde.toPackage(builder.build(), pkgFormats.getValue(), false, Optional.empty() );
+                Serde.toPackage(builder.build(), pkgFormats.getValue(), false, Optional.empty());
             } else {
                 // send to URL - TODO
             }
+            logger.logTransfer(Path.of(logField.getText()), logAppend.isSelected(),
+                               bagNameField.getText(), bagSize, destField.getText());
             reset(true);
         } catch (IOException | URISyntaxException exp) {
                 // test only
-                consoleLog.log("Exception thrown: " + exp.getMessage());
-                System.err.println("Log: " + consoleLog.currentEntry());
+                logger.log("Exception thrown: " + exp.getMessage());
+                System.err.println("Log: " + logger.currentEntry());
+                exp.printStackTrace();
                // sendButton.fireEvent(new ActionEvent());
         }
     }
@@ -395,10 +404,20 @@ public class Controller {
     private void fillPayload(TreeItem<PathRef> ti, BagBuilder builder) throws IOException, URISyntaxException {
         PathRef pr = ti.getValue();
         PathRef parent = ti.getParent().getValue();
-        if (! pr.isFolder()) {
+        if (pr.isFolder()) {
+            for (TreeItem<PathRef> child : ti.getChildren()) {
+                fillPayload(child, builder);
+            }
+        } else {
             Optional<URI> location = pr.getLocation();
             if (location.isEmpty()) {
                 System.out.println("relPath: " + parent.getRelPath());
+                if (mapPayload.isSelected()) {
+                    builder.property("source-map.txt", pr.getSourcePath().toString(), makeRelPath(parent, pr));
+                }
+                if (metaPayload.isSelected()) {
+                    builder.property("source-meta.txt", sourceMetadata(pr.getSourcePath()), makeRelPath(parent, pr));
+                }
                 if (parent.getRelPath() != null) {
                     builder.payload(makeRelPath(parent, pr), pr.getSourcePath());
                 } else {
@@ -410,11 +429,6 @@ public class Controller {
                 } else {
                     builder.payloadRef(pr.getFileName(), pr.getSourcePath(), location.get());
                 }
-            }
-        } else {
-            for (TreeItem<PathRef> pti : ti.getChildren()) {
-                System.out.println("in folder children");
-                fillPayload(pti, builder);
             }
         }
     }
@@ -433,6 +447,24 @@ public class Controller {
                 break;
             }
         }
+    }
+
+    private String sourceMetadata(Path source) {
+        try {
+            var basicAttrs = Files.getFileAttributeView(source, BasicFileAttributeView.class).readAttributes();
+            FileTime created = basicAttrs.creationTime();
+            FileTime modified = basicAttrs.lastModifiedTime();
+            var attrs = String.format("Created>%s|Modified>%s", shortTime(created), shortTime(modified));
+            return attrs;
+        } catch (Exception e) {
+            logger.log("Can't read source file attributes");
+        }
+        return "no data";
+    }
+
+    private static LocalDateTime shortTime(FileTime ftime) {
+        var local = ftime.toInstant().truncatedTo(ChronoUnit.SECONDS);
+        return LocalDateTime.ofInstant(local, ZoneOffset.UTC);
     }
 
     private String makeRelPath(PathRef parent, PathRef ref) {
