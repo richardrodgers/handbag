@@ -23,7 +23,6 @@
                                     <Label text="Destination"/>
                                     <TextField fx:id="destField"/>
                                     <Button fx:id="destBrowse" text="Browse"/>
-                                    <CheckBox fx:id="destReuse" text="Reuse"/>
                                 </HBox>
                                 <HBox spacing="6">
                                     <Label text="Package Format"/>
@@ -52,8 +51,8 @@
                                     <Button text="Clear"/>
                                 </HBox>
                                 <Separator/>
-                                <CheckBox text="Map Payload Source Path"/>
-                                <CheckBox text="Capture Payload Source Metadata"/>
+                                <CheckBox fx:id="mapPayload" text="Map Payload Source Path"/>
+                                <CheckBox fx:id="metaPayload" text="Capture Payload Source Metadata"/>
                                 <Separator/>
                                 <HBox spacing="6">
                                     <Label text="Activity Log"/>
@@ -110,9 +109,13 @@
                         </HBox>
                     </VBox>
                 </Tab>
+                <!--
                 <Tab text="User Guide">
-                    <MarkdownView fx:id="manualView"/>
+                    <ScrollPane fitToWidth="true" fitToHeight="true">
+                        <MarkdownView fx:id="manualView" alignment="center"/>
+                    </ScrollPane>
                 </Tab>
+                -->
             </TabPane>
             <Separator/>
             <VBox> <!-- list of buttons and labels -->
@@ -130,8 +133,9 @@
             </VBox>
         </HBox>
         <HBox spacing="4">
-            <Button fx:id="logBackButton" text="Back"/>
+            <Button fx:id="logTopButton" text="Top"/>
             <Label fx:id="consoleLogLabel"/>
+            <Button fx:id="logBackButton" text="Back"/>
         </HBox>
     </VBox>
 </AnchorPane>
