@@ -97,6 +97,7 @@
                     <TreeView fx:id="tagTreeView"/>
                 </Tab>
                 <Tab text="%fetchTab">
+                    <ListView fx:id="fetchView"/>
                 </Tab>
                 <Tab text="%metadataTab">
                     <VBox>
@@ -109,13 +110,13 @@
                         </HBox>
                     </VBox>
                 </Tab>
-                <!--
-                <Tab text="User Guide">
+                <Tab text="%manualTab">
+                 <!--
                     <ScrollPane fitToWidth="true" fitToHeight="true">
                         <MarkdownView fx:id="manualView" alignment="center"/>
                     </ScrollPane>
-                </Tab>
                 -->
+                </Tab>
             </TabPane>
             <Separator/>
             <VBox> <!-- list of buttons and labels -->

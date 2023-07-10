@@ -64,6 +64,10 @@ public class MetadataItem implements PropertySheet.Item {
         return constraint.isRepeatable();
     }
 
+    public boolean isPreset() {
+        return getPermitted().size() == 1;
+    }
+
     @Override
     public String getDescription() {
         return null;
