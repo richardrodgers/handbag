@@ -4,25 +4,24 @@
  */
 package org.modrepo.handbag;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class Logger {
     
-    private final Deque<String> logQueue = new ArrayDeque<>(12);
+    private final Deque<String> logQueue = new LinkedBlockingDeque<>(12);
 
     public Logger() {
     }
 
     public String currentEntry() {
         var cur = logQueue.peekFirst();
-        return (cur != null) ? cur : "";
+        return (cur != null) ? cur : "Empty";
     }
 
     public String previousEntry(String entry) {
@@ -33,7 +32,7 @@ public class Logger {
                 return iter.hasNext() ? iter.next() : currentEntry();
             }
         }
-        return "";
+        return "None";
     }
 
     public void log(String entry) {

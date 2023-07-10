@@ -17,6 +17,7 @@ import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
 
 import java.io.File;
@@ -105,6 +106,7 @@ public class Controller {
     @FXML private Label consoleLogLabel;
     @FXML private Button logTopButton;
     @FXML private Button logBackButton;
+    @FXML private ListView<String> fetchView;
     @FXML private MarkdownView manualView;
 
     // flags for state of metadata editing
@@ -125,7 +127,7 @@ public class Controller {
         // Basic settings
         resMdBox.setIndeterminate(false);
 
-        pkgFormats.getItems().addAll("zip", "tar", "tgz");
+        pkgFormats.getItems().addAll("zip", "tar", "tgz", "none");
         pkgFormats.setValue("zip");
 
         destBrowse.setOnAction(e -> chooseLocalDir(destField));
@@ -135,7 +137,7 @@ public class Controller {
 
         profileField = TextFields.createClearableTextField();
         profBox.getChildren().add(1, profileField);
-        profileBrowse.setOnAction(e -> chooseLocalFile(profileField));
+        profileBrowse.setOnAction(e -> chooseLocalFile(profileField, true));
 
         // Feature settings
         loadWorkButton.setOnAction(e -> loadWork());
@@ -225,6 +227,10 @@ public class Controller {
             var mdItem = (MetadataItem)item;
             if (mdItem.getPermitted().size() > 1) {
                 return Editors.createChoiceEditor(mdItem, mdItem.getPermitted());
+            } else if (mdItem.isPreset()) {
+                var editor = Editors.createTextEditor(mdItem);
+                //editor.setEditable(false);
+                return editor;
             } else {
                 return Editors.createTextEditor(mdItem);
             }
@@ -241,6 +247,7 @@ public class Controller {
             consoleLogLabel.setText(logger.currentEntry());
             event.consume();
         });
+        logTopButton.setOnAction(e -> consoleLogLabel.setText(logger.currentEntry()));
         logBackButton.setOnAction(e -> consoleLogLabel.setText(logger.previousEntry(consoleLogLabel.getText())));
 
         try {
@@ -353,8 +360,7 @@ public class Controller {
                           false,
                           chksumAlgs.getCheckModel().getCheckedIndices().stream()
                           .map(idx -> csAlgoCode(chksums.get(idx)))
-                          .toList().toArray(new String[0])
-                          );
+                          .toList().toArray(new String[0]));
             } else {
                 // TODO - set staging dir
                 builder = new BagBuilder();
@@ -363,18 +369,12 @@ public class Controller {
                 System.err.println("Log: " + logger.currentEntry());
                 sendButton.fireEvent(new ActionEvent());
             }
-            // add payload files
+            // add payload files, tag files
             for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
                 fillPayload(ti, builder);
             }
-             // add tag files
-             for (TreeItem<PathRef> ti : tagTreeView.getRoot().getChildren()) {
-                PathRef pr = ti.getValue();
-                if (pr.getRelPath().length() > 0) {
-                    builder.tag(pr.getFullPath(), pr.getSourcePath());
-                } else {
-                    builder.tag(pr.getFullPath(), pr.getSourcePath());
-                }
+            for (TreeItem<PathRef> ti : tagTreeView.getRoot().getChildren()) {
+                fillTags(ti, builder);
             }
             // add metadata (currently only bag-info properties supported)
             for (PropertySheet.Item mdItem : metadataPropertySheet.getItems()) {
@@ -385,10 +385,15 @@ public class Controller {
             }
             if (isLocalDest) {
                 // TODO - set notime param via config
-                Serde.toPackage(builder.build(), pkgFormats.getValue(), false, Optional.empty());
+                var pkgFmt = pkgFormats.getValue();
+                switch (pkgFmt) {
+                    case "none" -> builder.build(); // just finish in place
+                    default -> Serde.toPackage(builder.build(), pkgFmt, false, Optional.empty());
+                }
             } else {
                 // send to URL - TODO
             }
+            logger.log("Bag transmitted");
             logger.logTransfer(Path.of(logField.getText()), logAppend.isSelected(),
                                bagNameField.getText(), bagSize, destField.getText());
             reset(true);
@@ -430,6 +435,18 @@ public class Controller {
                     builder.payloadRef(pr.getFileName(), pr.getSourcePath(), location.get());
                 }
             }
+        }
+    }
+
+    private void fillTags(TreeItem<PathRef> ti, BagBuilder builder) throws IOException {
+        PathRef pr = ti.getValue();
+        PathRef parent = ti.getParent().getValue();
+        if (pr.isFolder()) {
+            for (TreeItem<PathRef> child : ti.getChildren()) {
+                fillTags(child, builder);
+            }
+        } else {
+            builder.tag(makeRelPath(parent, pr), pr.getSourcePath());
         }
     }
 
@@ -606,8 +623,12 @@ public class Controller {
         } catch (Exception e) {}
     }
 
-     private void chooseLocalFile(TextField field) {
+     private void chooseLocalFile(TextField field, boolean filterJson) {
         var chooser = new FileChooser();
+        if (filterJson) {
+            chooser.getExtensionFilters().add(
+                new ExtensionFilter("JSON documents", "*.json"));
+        }
         File log = chooser.showOpenDialog(null);
         try {
             field.setText(log.getCanonicalPath());
@@ -621,7 +642,6 @@ public class Controller {
     */
 
     private final class TextFieldTreeCellImpl extends TreeCell<PathRef> {
- 
         private TextField textField;
         private final ContextMenu ctxMenu = new ContextMenu();
         private final boolean payload; 
@@ -633,7 +653,6 @@ public class Controller {
         @Override
         public void startEdit() {
             super.startEdit();
- 
             if (textField == null) {
                 createTextField();
             }
@@ -652,7 +671,6 @@ public class Controller {
         @Override
         public void updateItem(PathRef item, boolean empty) {
             super.updateItem(item, empty);
- 
             if (empty) {
                 setText(null);
                 setGraphic(null);
@@ -725,8 +743,12 @@ public class Controller {
         }
 
         public String getFullPath() {
-            return relPath + "/" + fileName;
+            return (relPath != null) ? relPath + "/" + fileName : fileName;
         }
+
+        public String getPayloadPath() {
+            return "data" + "/" + getFullPath();
+        } 
 
         public String getFileName() {
             return fileName;
@@ -806,7 +828,9 @@ public class Controller {
         fetchItem.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-                new TextInputDialog("Fetch URI").showAndWait()
+                var fetchDialog = new TextInputDialog("Fetch URI");
+                fetchDialog.setTitle("Fetch Link");
+                fetchDialog.showAndWait()
                 .ifPresent(uri -> {
                     TreeItem<PathRef> item = cell.getTreeItem();
                     PathRef pr = item.getValue();
@@ -815,8 +839,12 @@ public class Controller {
                             pr.setLocation(uri);
                             item.setGraphic(new ImageView(refIcon));
                             // subtract bytes from payload count - should include only in-bag files
-                            bagSize -= Files.size(pr.getSourcePath());
+                            var fetchSize = Files.size(pr.getSourcePath());
+                            bagSize -= fetchSize;
                             bagSizeLabel.setText(scaledSize(bagSize, 0));
+                            // add line to fetch list
+                            var fetchStr = String.format("%s %d %s", uri, fetchSize, pr.getPayloadPath());
+                            fetchView.getItems().add(fetchStr);
                         }
                     } catch (Exception exp) {}
                 });
