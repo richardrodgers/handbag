@@ -25,3 +25,18 @@ metadata elements), then transfer a serialized bag to a destination, follow thes
    area under the _data_ folder icon.
 5. Switch to the _Metadata_ tab and enter or select desired information.
 6. Press the _Destination_ button to the right of the tabs.
+
+### Primary Use-Case ###
+
+HandBag is a tool for selecting resources from the local (or a mounted) file system to be placed
+in a directory structure conforming to the BagIt specification, describing this resource set,
+and transferring/transmitting it to a local or remote destination, in compressed package, or as a
+loose directory.
+
+Visually, the UI operates from left to right, starting with the _Settings_ tab, where you specify
+the minimum information (name for the bag, destination) necessary for a transfer. Next, you can select
+files from the file system, and drop them into the _Payload_ tab area. Finally, the _Metadata_ tab exposes
+a property editor where you can describe the bag (you may enter metadata or payload files in any order).
+
+When the bag is complete, there are just two alternative actions to perform, using the buttons to the right of the
+tabs. You may either discard your work (_Trash_), or press the _Destination_ button to effect the transfer.

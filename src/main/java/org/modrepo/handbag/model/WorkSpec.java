@@ -16,10 +16,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * (delivery) and one or more BagIt Profile references (jobs)
  */
 public class WorkSpec {
-    private String name;
+
+    @JsonProperty("name")
+    public String name;
+
     private String icon;
-    private String destinationName;
-    private String destinationUrl;
+
+    @JsonProperty("destination")
+    public String destinationName;
+
+    @JsonProperty("destinationAddress")
+    public String destinationAddr;
+
     private String bagNameGenerator;
     private String packageFormat;
 
@@ -53,12 +61,12 @@ public class WorkSpec {
         this.destinationName = destinationName;
     }
 
-    public String getDestinationUrl() {
-        return destinationUrl;
+    public String getDestinationAddr() {
+        return destinationAddr;
     }
 
-    public void setDestinationUrl(String destinationUrl) {
-        this.destinationUrl = destinationUrl;
+    public void setDestinationUrl(String destinationAddr) {
+        this.destinationAddr = destinationAddr;
     }
 
     public String getBagNameGenerator() {

@@ -77,6 +77,7 @@ public class Controller {
     @FXML private CheckBox retainMdBox;
     @FXML private TextField profileField;
     @FXML private Button profileBrowse;
+    @FXML private Button profileLoad;
     @FXML private Label workflowLabel;
     @FXML private Label jobNameLabel;
     @FXML private TextField dispatchField;
@@ -136,8 +137,11 @@ public class Controller {
         retainMdBox.setSelected(true);
 
         profileField = TextFields.createClearableTextField();
+        //profileField.get
         profBox.getChildren().add(1, profileField);
-        profileBrowse.setOnAction(e -> chooseLocalFile(profileField, true));
+        profileBrowse.setOnAction(a -> chooseLocalFile(profileField, true));
+        profileLoad.setDisable(false); // FIX ME
+        profileLoad.setOnAction(a -> loadProfile());
 
         // Feature settings
         loadWorkButton.setOnAction(e -> loadWork());
@@ -229,7 +233,7 @@ public class Controller {
                 return Editors.createChoiceEditor(mdItem, mdItem.getPermitted());
             } else if (mdItem.isPreset()) {
                 var editor = Editors.createTextEditor(mdItem);
-                //editor.setEditable(false);
+                editor.getEditor().setDisable(true);
                 return editor;
             } else {
                 return Editors.createTextEditor(mdItem);
@@ -552,12 +556,23 @@ public class Controller {
                 result.toConsole();
             }
         } catch (Exception e) {
-            // put error in console log
-            System.err.println("Ex: " + e.getMessage());
+            logger.log("Ex: " + e.getMessage());
             e.printStackTrace();
         }
         return List.of();
     }
+
+    private void loadProfile() {
+        var result = HttpAccess.getProfile(profileField.getText());
+        if (result.success()) {
+            var cntList = result.getObject().bagInfo
+                                 .entrySet().stream()
+                                 .map(MetadataItem::new).toList();
+            metadataPropertySheet.getItems().addAll(cntList);
+        } else {
+            logger.log(result.getErrors().get(0));
+        }
+    } 
 
     // check and update disabled state of buttons based on application state
     private void updateButtons() {
@@ -587,32 +602,31 @@ public class Controller {
         String dispatchAddr = dispatchField.getText();
         // Could be in local filesystem or URL or bundled in resources?
         System.err.println("Addr: " + dispatchAddr);
-        try {
-            if (dispatchAddr.startsWith("http")) {
-                ; // dereference URL
-            } else {
-                var mapper = new ObjectMapper();
-                workSpec = mapper.readValue(new FileInputStream(dispatchAddr), WorkSpec.class);
-            }
-            // eagerly load jobs from spec
-            for (JobSpec jspec: workSpec.jobs) {
-                loadJob(jspec);
-            }
-            // populate active jobs choicebox
-            activeJobBox.getItems().addAll(
-                workSpec.jobs.stream()
-                .map(j -> j.name)
-                .toList().toArray(new String[0])
-            );
+       // try {
+            var result = HttpAccess.getWork(dispatchAddr);
+            if (result.success()) {
+                var workSpec = result.getObject();
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+                // eagerly load jobs from spec
+                //for (JobSpec jspec: workSpec.jobs) {
+                //    loadJob(jspec);
+                //}
+                // populate active jobs choicebox
+                activeJobBox.getItems().addAll(
+                    workSpec.jobs.stream()
+                    .map(j -> j.name)
+                    .toList().toArray(new String[0]));
+            } else {
+                logger.log(result.getErrors().get(0));
+            }
+        //} catch (IOException e) {
+        //    e.printStackTrace();
+        //}
         return workSpec;
     }
 
     private void loadJob(JobSpec spec) {
-
+        ;
     }
 
     private void chooseLocalDir(TextField field) {

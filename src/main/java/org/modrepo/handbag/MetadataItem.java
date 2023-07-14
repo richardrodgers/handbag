@@ -30,12 +30,20 @@ public class MetadataItem implements PropertySheet.Item {
         // FIX
         this.name = realName;
         this.constraint = entry.getValue();
+        // test
+        if (isPreset()) {
+            this.value = getPermitted().get(0);
+        }
     }
 
     public MetadataItem(String name, BagitTagConstraint constraint) {
         this.realName = name;
         this.name = name;
         this.constraint = constraint;
+        // test
+        if (isPreset()) {
+            this.value = getPermitted().get(0);
+        }
     }
 
     @Override
