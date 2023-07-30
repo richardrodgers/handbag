@@ -103,4 +103,16 @@ public class MetadataItem implements PropertySheet.Item {
         // TODO Auto-generated method stub
         return Optional.empty();
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        if (this.getClass() != other.getClass()) {
+            return false;
+        }
+        // test only - name equality
+        return this.name.equals(((MetadataItem)other).name);
+    }
 }

@@ -21,7 +21,6 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,13 +39,15 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.PropertySheet;
-import org.controlsfx.control.textfield.TextFields;
+//import org.controlsfx.control.textfield.TextFields;
 import org.controlsfx.property.editor.Editors;
 
 import org.modrepo.packr.Bag;
@@ -61,8 +62,10 @@ import org.modrepo.bagmatic.ContextBuilder;
 import org.modrepo.bagmatic.impl.profile.BagitProfile;
 import org.modrepo.bagmatic.impl.profile.BagitTagConstraint;
 import org.modrepo.bagmatic.model.Result;
+
 import org.modrepo.handbag.model.JobSpec;
 import org.modrepo.handbag.model.WorkSpec;
+import static org.modrepo.handbag.HttpAccess.*;
 
 import com.sandec.mdfx.MarkdownView;
 
@@ -71,17 +74,16 @@ public class Controller {
     @FXML private AccordionDP settings;
     @FXML private TextField bagNameField;
     @FXML private TextField destField;
-    @FXML private Button destBrowse;
+    @FXML private Button destButton;
     @FXML private ChoiceBox<String> pkgFormats;
     @FXML private CheckBox resMdBox;
     @FXML private CheckBox retainMdBox;
     @FXML private TextField profileField;
-    @FXML private Button profileBrowse;
-    @FXML private Button profileLoad;
-    @FXML private Label workflowLabel;
+    @FXML private Button profileButton;
+    @FXML private Label workLabel;
     @FXML private Label jobNameLabel;
     @FXML private TextField dispatchField;
-    @FXML private Button loadWorkButton;
+    @FXML private Button workButton;
     @FXML private ChoiceBox<String> activeJobBox;
     @FXML private CheckBox mapPayload;
     @FXML private CheckBox metaPayload;
@@ -120,6 +122,7 @@ public class Controller {
     private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
     private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
     private WorkSpec workSpec;
+    private Map<String, BagitProfile> jobProfiles = new HashMap<>();
     private Logger logger = new Logger();
     private List<String> chksums = List.of("sha512", "sha256", "sha1", "md5");
 
@@ -131,23 +134,84 @@ public class Controller {
         pkgFormats.getItems().addAll("zip", "tar", "tgz", "none");
         pkgFormats.setValue("zip");
 
-        destBrowse.setOnAction(e -> chooseLocalDir(destField));
+        destButton.setOnAction(a -> {
+            if (destField.getText() == null ||
+                destField.getText().length() == 0) {
+                if (chooseLocalDir(destField)) {
+                    destButton.setText("Clear");
+                }
+            } else if (destButton.getText().equals("Clear")) {
+                destField.clear();
+                destButton.setText("Browse");
+            }
+        });
+
+        destField.setOnAction(act -> {
+            if (destButton.getText().equals("Browse")) {
+                    destButton.setText("Clear");
+            }
+        });
 
         resMdBox.setSelected(true);
         retainMdBox.setSelected(true);
 
-        profileField = TextFields.createClearableTextField();
-        //profileField.get
-        profBox.getChildren().add(1, profileField);
-        profileBrowse.setOnAction(a -> chooseLocalFile(profileField, true));
-        profileLoad.setDisable(false); // FIX ME
-        profileLoad.setOnAction(a -> loadProfile());
+        //profileField = TextFields.createClearableTextField();
+        profileButton.setOnAction(a -> {
+            if (profileField.getText() == null ||
+                profileField.getText().length() == 0) {
+                if (chooseLocalFile(profileField, true)) {
+                    profileButton.setText("Load");
+                }
+            } else if (profileField.getText().length() > 0 &&
+                       profileButton.getText().equals("Load")) {
+                loadProfile();
+                profileButton.setText("Clear");
+            } else if (profileButton.getText().equals("Clear")) {
+                profileField.clear();
+                profileButton.setText("Browse");
+            }
+        });
+
+        profileField.setOnAction(act -> {
+            if (profileButton.getText().equals("Browse")) {
+                profileButton.setText("Load");
+            }
+        });
 
         // Feature settings
-        loadWorkButton.setOnAction(e -> loadWork());
+        workButton.setOnAction(a -> {
+            if (dispatchField.getText() == null ||
+                dispatchField.getText().length() == 0) {
+                if (chooseLocalFile(dispatchField, true)) {
+                    workButton.setText("Load");
+                }
+            } else if (dispatchField.getText().length() > 0 &&
+                       workButton.getText().equals("Load")) {
+                loadWork();
+                workButton.setText("Clear");
+            } else if (workButton.getText().equals("Clear")) {
+                dispatchField.clear();
+                workButton.setText("Browse");
+            }
+        });
+
+        dispatchField.setOnAction(act -> {
+            if (workButton.getText().equals("Browse")) {
+                    workButton.setText("Load");
+            }
+        });
+    
         activeJobBox.getSelectionModel().selectedIndexProperty().addListener(
-            (ov, oldVal, newVal) -> 
-                {jobNameLabel.setText(activeJobBox.getItems().get(newVal.intValue()));
+            (ov, oldVal, newVal) -> {
+                var newJob = activeJobBox.getItems().get(newVal.intValue());
+                if (oldVal.intValue() < 0) {
+                    // job box uninitialized - just add profile
+                    addProfile(jobProfiles.get(newJob));
+                } else {
+                    var oldJob = activeJobBox.getItems().get(oldVal.intValue());
+                    replaceProfile(oldJob, newJob);
+                }
+                jobNameLabel.setText(newJob);
         });
 
         logBrowse.setOnAction(e -> chooseLocalDir(logField));
@@ -171,10 +235,10 @@ public class Controller {
         settings.setExpandedPane(basicPane);
 
         Image wfIm = new Image(getClass().getResourceAsStream("/SiteMap.png"), 90, 90, false, false);
-        workflowLabel.setGraphic(new ImageView(wfIm));
-        workflowLabel.setContentDisplay(ContentDisplay.BOTTOM);
+        workLabel.setGraphic(new ImageView(wfIm));
+        workLabel.setContentDisplay(ContentDisplay.BOTTOM);
 
-        destField.setOnAction(e -> reset(false));
+        //destField.setOnAction(e -> reset(false));
 
         var bagText = bagNameField.getText();
         bagLabel.setText(bagText.isEmpty() ? "Bag" : bagText);
@@ -247,17 +311,24 @@ public class Controller {
         
         // log display
         consoleLogLabel.setText(logger.currentEntry());
-        consoleLogLabel.addEventHandler(ActionEvent.ANY, event -> {
-            consoleLogLabel.setText(logger.currentEntry());
-            event.consume();
-        });
         logTopButton.setOnAction(e -> consoleLogLabel.setText(logger.currentEntry()));
         logBackButton.setOnAction(e -> consoleLogLabel.setText(logger.previousEntry(consoleLogLabel.getText())));
 
         try {
             var manPath = Paths.get(getClass().getResource("/manual_en.md").toURI());
-            manualView.setMdString(new String(Files.readAllBytes(manPath)));
+            var manMD = new String(Files.readAllBytes(manPath));
+            manualView.setMdString(manMD);
         } catch (Exception e) {}
+    }
+
+    private void replaceProfile(String oldProf, String newProf) {
+        removeProfile(jobProfiles.get(oldProf));
+        addProfile(jobProfiles.get(newProf));
+    }
+
+    private void showLog(String entry) {
+        logger.log(entry);
+        consoleLogLabel.setText(logger.currentEntry());
     }
 
     private void initTreeView(TreeView<PathRef> view, String root) {
@@ -351,13 +422,14 @@ public class Controller {
     }
 
     private void transmitBag() {
-        System.err.println("In transmit");
         try {
-            URI destUri = new URL(destField.getText()).toURI();
-            boolean isLocalDest = destUri.getScheme().startsWith("file");
+            var destAddr = destField.getText();
+            //URI destUri = new URL(destField.getText()).toURI();
+            // refine test
+            boolean isLocalDest = ! destAddr.startsWith("http");
             BagBuilder builder = null;
             if (isLocalDest) {
-                Path destDir = Paths.get(destUri);
+                Path destDir = Paths.get(destAddr);
                 builder = new BagBuilder(destDir.resolve(bagNameField.getText()),
                           Charset.forName(textEncs.getValue()),
                           EolRule.valueOf(eolRules.getValue()),
@@ -368,10 +440,7 @@ public class Controller {
             } else {
                 // TODO - set staging dir
                 builder = new BagBuilder();
-                // test only
-                logger.log("Non-Local destination not implemented");
-                System.err.println("Log: " + logger.currentEntry());
-                sendButton.fireEvent(new ActionEvent());
+                showLog("Non-Local destination not implemented");
             }
             // add payload files, tag files
             for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
@@ -387,26 +456,27 @@ public class Controller {
                     builder.metadata(item.getRealName(), item.getValue());
                 }
             }
+            var pkgFmt = pkgFormats.getValue();
             if (isLocalDest) {
                 // TODO - set notime param via config
-                var pkgFmt = pkgFormats.getValue();
                 switch (pkgFmt) {
                     case "none" -> builder.build(); // just finish in place
                     default -> Serde.toPackage(builder.build(), pkgFmt, false, Optional.empty());
                 }
             } else {
-                // send to URL - TODO
+                // send to URL - packaged bag only
+                var destUri = new URL(destAddr).toURI();
+                var pkgPath = Serde.toPackage(builder.build(), pkgFmt, false, Optional.empty());
+                postPackage(destUri, pkgPath, pkgFmt);
             }
-            logger.log("Bag transmitted");
+            showLog("Bag transmitted");
             logger.logTransfer(Path.of(logField.getText()), logAppend.isSelected(),
                                bagNameField.getText(), bagSize, destField.getText());
             reset(true);
         } catch (IOException | URISyntaxException exp) {
-                // test only
-                logger.log("Exception thrown: " + exp.getMessage());
-                System.err.println("Log: " + logger.currentEntry());
-                exp.printStackTrace();
-               // sendButton.fireEvent(new ActionEvent());
+            // test only
+            showLog("Exception thrown: " + exp.getMessage());
+            exp.printStackTrace();
         }
     }
 
@@ -478,7 +548,7 @@ public class Controller {
             var attrs = String.format("Created>%s|Modified>%s", shortTime(created), shortTime(modified));
             return attrs;
         } catch (Exception e) {
-            logger.log("Can't read source file attributes");
+            showLog("Can't read source file attributes");
         }
         return "no data";
     }
@@ -556,21 +626,33 @@ public class Controller {
                 result.toConsole();
             }
         } catch (Exception e) {
-            logger.log("Ex: " + e.getMessage());
+            showLog("Ex: " + e.getMessage());
             e.printStackTrace();
         }
         return List.of();
     }
 
+    private void removeProfile(BagitProfile profile) {
+        var cntList = profile.bagInfo.entrySet().stream()
+                             .map(MetadataItem::new).toList();
+        metadataPropertySheet.getItems().removeAll(cntList);
+    }
+
+    private void addProfile(BagitProfile profile) {
+        var cntList = profile.bagInfo.entrySet().stream()
+                            .map(MetadataItem::new).toList();
+        metadataPropertySheet.getItems().addAll(cntList);
+    } 
+
     private void loadProfile() {
-        var result = HttpAccess.getProfile(profileField.getText());
+        var result = getProfile(profileField.getText());
         if (result.success()) {
             var cntList = result.getObject().bagInfo
                                  .entrySet().stream()
                                  .map(MetadataItem::new).toList();
             metadataPropertySheet.getItems().addAll(cntList);
         } else {
-            logger.log(result.getErrors().get(0));
+            showLog(result.getErrors().get(0));
         }
     } 
 
@@ -602,51 +684,63 @@ public class Controller {
         String dispatchAddr = dispatchField.getText();
         // Could be in local filesystem or URL or bundled in resources?
         System.err.println("Addr: " + dispatchAddr);
-       // try {
-            var result = HttpAccess.getWork(dispatchAddr);
-            if (result.success()) {
-                var workSpec = result.getObject();
-
-                // eagerly load jobs from spec
-                //for (JobSpec jspec: workSpec.jobs) {
-                //    loadJob(jspec);
-                //}
-                // populate active jobs choicebox
-                activeJobBox.getItems().addAll(
-                    workSpec.jobs.stream()
-                    .map(j -> j.name)
-                    .toList().toArray(new String[0]));
-            } else {
-                logger.log(result.getErrors().get(0));
+        var result = getWork(dispatchAddr);
+        if (result.success()) {
+            var workSpec = result.getObject();
+            // eagerly load job profiles from spec
+            for (JobSpec jspec: workSpec.jobs) {
+               loadJob(jspec);
             }
-        //} catch (IOException e) {
-        //    e.printStackTrace();
-        //}
+            // populate active jobs choicebox
+            activeJobBox.getItems().addAll(
+                        workSpec.jobs.stream()
+                        .map(j -> j.name)
+                        .toList().toArray(new String[0]));
+        } else {
+            showLog(result.getErrors().get(0));
+        }
         return workSpec;
     }
 
     private void loadJob(JobSpec spec) {
-        ;
+        var result = getProfile(spec.profileAddr);
+        if (result.success()) {
+            jobProfiles.put(spec.name, result.getObject());
+        } else {
+            showLog(result.getErrors().get(0));
+        }
     }
 
-    private void chooseLocalDir(TextField field) {
+    private boolean chooseLocalDir(TextField field) {
         var chooser = new DirectoryChooser();
         File dir = chooser.showDialog(null);
-        try {
-           field.setText(dir.getCanonicalPath());
-        } catch (Exception e) {}
+        if (dir != null) {
+            try {
+                field.setText(dir.getCanonicalPath());
+            } catch (Exception e) {
+                showLog("Unable to parse directory");
+                dir = null;
+            }
+        }
+        return dir != null;
     }
 
-     private void chooseLocalFile(TextField field, boolean filterJson) {
+     private boolean chooseLocalFile(TextField field, boolean filterJson) {
         var chooser = new FileChooser();
         if (filterJson) {
             chooser.getExtensionFilters().add(
                 new ExtensionFilter("JSON documents", "*.json"));
         }
-        File log = chooser.showOpenDialog(null);
-        try {
-            field.setText(log.getCanonicalPath());
-        } catch (Exception e) {}
+        File file = chooser.showOpenDialog(null);
+        if (file != null) {
+            try {
+                field.setText(file.getCanonicalPath());
+            } catch (Exception e) {
+                showLog("Unable to parse file name");
+                file = null;
+            }
+        }
+        return file != null;
     }
 
     /* 
