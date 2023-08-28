@@ -18,7 +18,7 @@ typically need to adjust (or even understand) them to perform basic activities.
 ### Quick Start
 
 To simply collect a few payload files, add some descriptive metadata (using the reserved
-metadata elements), then transfer a serialized bag to a destination, follow these easy steps:
+metadata elements), then transfer the serialized bag to a destination, follow these easy steps:
 
 1. Launch the application, which will open to the _Basic_ settings tab.
 2. Assign a name to the bag.

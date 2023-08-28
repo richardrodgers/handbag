@@ -16,7 +16,6 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
 
-import org.modrepo.bagmatic.impl.profile.BagitProfile;
 import org.modrepo.bagmatic.model.Result;
 import org.modrepo.handbag.model.WorkSpec;
 
@@ -29,33 +28,6 @@ public class HttpAccess {
                                         .followRedirects(Redirect.NORMAL)
                                         .build();
     private static ObjectMapper mapper = new ObjectMapper();
-
-    public static Result<BagitProfile> getProfile(String profileAddr) {
-        Result<BagitProfile> result = new Result<>();
-        try {
-            BagitProfile profile = null;
-            if (profileAddr.startsWith("http")) {
-                var request = HttpRequest.newBuilder()
-                              .uri(URI.create(profileAddr))
-                              .header("Accept", "application/json")
-                              .build();
-                HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-                if (response.statusCode() == 200) {
-                    profile = mapper.readValue(response.body(), BagitProfile.class);
-                } else {
-                    result.addError("Non-success code from host: " + response.statusCode());
-                }
-            } else {
-                profile = mapper.readValue(new FileInputStream(profileAddr), BagitProfile.class);
-            }
-            if (result.success()) {
-                result.setObject(profile);
-            }
-        } catch (Exception e) {
-            result.addError(e.getMessage());
-        }
-        return result;
-    }
 
     public static Result<WorkSpec> getWork(String workAddr) {
         Result<WorkSpec> result = new Result<>();
