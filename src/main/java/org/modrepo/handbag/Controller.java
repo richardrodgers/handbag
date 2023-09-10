@@ -15,6 +15,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.web.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -67,8 +68,6 @@ import org.modrepo.handbag.model.JobSpec;
 import org.modrepo.handbag.model.WorkSpec;
 import static org.modrepo.handbag.HttpAccess.*;
 
-import com.sandec.mdfx.MarkdownView;
-
 public class Controller {
 
     @FXML private AccordionDP settings;
@@ -110,8 +109,8 @@ public class Controller {
     @FXML private Button logTopButton;
     @FXML private Button logBackButton;
     @FXML private ListView<String> fetchView;
-    @FXML private MarkdownView manualView;
-
+    @FXML private WebView manualView;
+    
     // flags for state of metadata editing
     // - clean means no edits have been performed
     // - complete means all non-optional properties have values
@@ -122,8 +121,10 @@ public class Controller {
     private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
     private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
     private WorkSpec workSpec;
-    private Map<String, BagitProfile> jobProfiles = new HashMap<>();
     private ContextBuilder cbuilder = Bagmatic.platformBuilder();
+    private Map<String, BagitProfile> loadedProfiles = new HashMap<>();
+    private String curProfile = null;
+    private List<MetadataItem> addedItems = new ArrayList<>();
     private Logger logger = new Logger();
     private List<String> chksums = List.of("sha512", "sha256", "sha1", "md5");
 
@@ -149,12 +150,17 @@ public class Controller {
 
         destField.setOnAction(act -> {
             if (destButton.getText().equals("Browse")) {
-                    destButton.setText("Clear");
+                destButton.setText("Clear");
             }
         });
 
         resMdBox.setSelected(true);
         retainMdBox.setSelected(true);
+
+        retainMdBox.selectedProperty().addListener(
+            (ov, oldVal, newVal) -> {
+                addedItems.clear();
+        });
 
         //profileField = TextFields.createClearableTextField();
         profileButton.setOnAction(a -> {
@@ -206,12 +212,12 @@ public class Controller {
             (ov, oldVal, newVal) -> {
                 var newJob = activeJobBox.getItems().get(newVal.intValue());
                 if (oldVal.intValue() < 0) {
-                    // job box uninitialized - just add profile
-                    addProfile(jobProfiles.get(newJob));
+                    // job box uninitialized - just set first profile
+                    curProfile = newJob;
                 } else {
-                    var oldJob = activeJobBox.getItems().get(oldVal.intValue());
-                    replaceProfile(oldJob, newJob);
+                    curProfile = newJob;
                 }
+                populateMetadataEditor();
                 jobNameLabel.setText(newJob);
         });
 
@@ -309,10 +315,17 @@ public class Controller {
             var reserved = getReserved();
             metadataPropertySheet.getItems().addAll(reserved);
         }
-        //metadataPropertySheet.getItems().addAll(getReserved());
 
        // repMetaButton.setOnAction(e -> repeatMetaElement());
-        addMetaButton.setOnAction(e -> addMetaElement(addMetaField.getText()));
+        addMetaButton.setOnAction(e -> {
+            var name = addMetaField.getText();
+            var item = new MetadataItem(name, new BagitTagConstraint(false, List.of(), true, name));
+            if (retainMdBox.isSelected()) {
+                addedItems.add(item);
+            }
+            metadataPropertySheet.getItems().add(item);
+            //addMetaElement(name);
+    });
         
         // log display
         consoleLogLabel.setText(logger.currentEntry());
@@ -320,16 +333,16 @@ public class Controller {
         logBackButton.setOnAction(e -> consoleLogLabel.setText(logger.previousEntry(consoleLogLabel.getText())));
 
         try {
-            var manPath = Paths.get(getClass().getResource("/manual_en.md").toURI());
+            var manPath = Paths.get(getClass().getResource("/manual_en.html").toURI());
             var manMD = new String(Files.readAllBytes(manPath));
-            manualView.setMdString(manMD);
+            var webEngine = manualView.getEngine();
+            webEngine.loadContent(manMD, "text/html");
         } catch (Exception e) {}
     }
 
-    private void replaceProfile(String oldProf, String newProf) {
-        removeProfile(jobProfiles.get(oldProf));
-        addProfile(jobProfiles.get(newProf));
-    }
+    //private void replaceProfile(String oldProf, String newProf) {
+    //    addProfile(jobProfiles.get(newProf));
+    //}
 
     private void showLog(String entry) {
         logger.log(entry);
@@ -631,17 +644,15 @@ public class Controller {
         return List.of();
     }
 
-    private void removeProfile(BagitProfile profile) {
-        var cntList = profile.bagInfo.entrySet().stream()
-                             .map(MetadataItem::new).toList();
-        metadataPropertySheet.getItems().removeAll(cntList);
-    }
-
-    private void addProfile(BagitProfile profile) {
-        var cntList = profile.bagInfo.entrySet().stream()
+    private void populateMetadataEditor() {
+        var curProf = loadedProfiles.get(curProfile);
+        var mdList = curProf.bagInfo.entrySet().stream()
+                            .filter(e -> ! "autogenerated".equals(e.getValue().getDescription()))
                             .map(MetadataItem::new).toList();
-        metadataPropertySheet.getItems().addAll(cntList);
-    } 
+        metadataPropertySheet.getItems().clear();
+        metadataPropertySheet.getItems().addAll(mdList);
+        metadataPropertySheet.getItems().addAll(addedItems);
+    }
 
     private void loadProfile() {
         //var result = getProfile(profileField.getText());
@@ -683,7 +694,6 @@ public class Controller {
     private WorkSpec loadWork() {
         String dispatchAddr = dispatchField.getText();
         // Could be in local filesystem or URL or bundled in resources?
-        System.err.println("Addr: " + dispatchAddr);
         var result = getWork(dispatchAddr);
         if (result.success()) {
             var workSpec = result.getObject();
@@ -706,7 +716,7 @@ public class Controller {
         //var result = getProfile(spec.profileAddr);
         var result = cbuilder.merge(spec.name, profileField.getText());
         if (result.success()) {
-            jobProfiles.put(spec.name, result.getObject());
+            loadedProfiles.put(spec.name, result.getObject());
         } else {
             showLog(result.getErrors().get(0));
         }
