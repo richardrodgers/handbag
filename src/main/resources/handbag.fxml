@@ -1,9 +1,9 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.web.WebView?>
 <?import org.controlsfx.control.PropertySheet?>
 <?import org.controlsfx.control.CheckComboBox?>
-<?import com.sandec.mdfx.MarkdownView?>
 <?import org.modrepo.handbag.AccordionDP?>
 
 <AnchorPane fx:controller="org.modrepo.handbag.Controller"
@@ -100,8 +100,8 @@
                         <Separator/>
                         <HBox spacing="8">
                          <!--   <Button fx:id="repMetaButton" text="Repeat"/> -->
-                            <Button fx:id="addMetaButton" text="Add Element"/>
                             <TextField fx:id="addMetaField"/>
+                            <Button fx:id="addMetaButton" text="Add Element"/>
                         </HBox>
                     </VBox>
                 </Tab>
@@ -115,7 +115,7 @@
                     <ScrollPane fitToWidth="true" fitToHeight="true" 
                       minViewportHeight="200.0" minViewportWidth="400.0"
                       prefViewportHeight="200.0" prefViewportWidth="450.0">
-                        <MarkdownView fx:id="manualView" alignment="center"/>
+                        <WebView fx:id="manualView"/>
                     </ScrollPane>
                 </Tab>
             </TabPane>

@@ -1,0 +1,88 @@
+<html>
+<head/>
+<body>
+<h2>HandBag - User Guide</h2>
+<p>
+   HandBag is a light-weight GUI tool for manually assembling and transferring BagIt packaged content.
+   It has a self-contained application binary for each major platform: Windows, Mac, and Linux
+   and has no external dependencies (e.g. installing Java).   
+</p>
+<p>
+HandBag has various advanced capabilities, such as profile-aware metadata constraints, fetch file
+handling, etc. but all these features are optional, and not required to master for productive use of the tool.
+HandBag employs a sensible set of default configuration values, and you will not
+typically need to adjust (or even understand) them to perform basic activities.
+</p>
+<h3>Quick Start</h3>
+Simply to collect a few payload files, add some descriptive metadata (using the reserved
+metadata elements), then transfer the serialized bag to a destination, follow these easy steps:
+<ol>
+<li>Launch the application, which will open to the <em>Basic</em> settings tab.</li>
+<li>Assign a name to the bag you are creating.</li>
+<li>Enter or browse for a destination directory.</li>
+<li>Switch to the <em>Payload</em> tab, and 'drag and drop' files from anywhere on the desktop to the
+   area under the <em>data</em> folder icon.</li>
+<li>Switch to the <em>Metadata</em> tab and enter or select desired information.</li>
+<li>Press the <em>Destination</em> button to the right of the tabs.</li>
+</ol>
+<center><h2>Table of Contents</h2></center>
+<ol>
+   <li>
+      <a href="#usecase">
+         <span>Primary Use-Case</span>
+      </a>
+   </li>
+   <li>
+      <a href="#basic_settings">
+         <span>Basic Settings</span>
+      </a>
+   </li>
+   <li>
+      <a href="#payload">
+         <span>Payload</span>
+      </a>
+   </li>
+</ol>
+<h4 id="usecase">Primary Use-Case</h4>
+      <p>HandBag is a tool for selecting resources from the local (or an accessible mounted) file system to be placed
+   in a directory structure conforming to the BagIt specification, describing this resource set,
+   and transferring/transmitting it to a local or remote destination, in a compressed package, or as a
+   loose directory.
+</p>
+<p>Visually, the UI operates roughly from left to right, starting with the <em>Settings</em> tab, where you specify
+   the minimum information (name for the bag, destination) necessary for a transfer. Next, you can select
+   files from the file system, and drop them into the <em>Payload</em> tab area. Finally, the <em>Metadata</em> tab exposes
+   a property editor where you can describe the bag. In fact, you may enter metadata or payload files in any order,
+   moving back and forth across tabs.
+</p>
+   
+<p>When the bag is complete, there are just two alternative actions to perform, using the buttons to the right of the
+   tabs. You may either discard your work <em>(Trash)</em>, or press the <em>Destination</em> button to effect the transfer. Note that
+   discarding the bag will <em>not</em> delete or remove any source files, so it is a safe operation. It merely clears your workspace
+   to start another bag with a single button press.
+</p>
+<h4 id="basic_settings">Basic Settings</h4>
+<p>
+   HandBag makes extensive use of default configuration, to minimize the amount of repetitive manual
+   entry needed to produce an application artifact (bag). In fact, only two values must be set:
+   the bag name, and the destination. The bag name will be the filename preceding the suffix indicating the
+   archive or compression type, or if using a loose directory, it will be the name of the top-level directory
+   containing the bag. HandBag requires that the file or directory not exist, to prevent overwriting an existing
+   bag of the same name, so a new name must be assigned for each new bag. We will see that there are even ways
+   to automate the naming scheme using name macros - a topic for later exposition.
+</p>
+<p>
+   The destination value can be either a directory in the accessible file system (hitting the
+   <em>Browse</em> button brings up a directory chooser), or a URL to an Http address. In either case,
+   the button label will change to <em>Clear</em>, which removes the destination. HandBag assumes there
+   may be multiple bags transmitted to the same destination in a session of the application, so this field
+   is not automatically cleared afer each use (as the bag name is, e.g).
+</p>
+<p>
+   The final basic config value is labelled package format, which may be one of the supported serializatons,
+   or <em>none</em> for a loose directory bag. Note that unserialized bags may not be transmitted to a remote 
+   web service, only to the local file system.
+</p>
+<h4 id="payload">Payload</h4>
+</body>
+</html>
