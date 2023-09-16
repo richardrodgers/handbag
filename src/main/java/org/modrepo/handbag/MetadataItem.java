@@ -98,6 +98,10 @@ public class MetadataItem implements PropertySheet.Item {
         this.value = (String) o;
     }
 
+    public BagitTagConstraint getSpec() {
+        return constraint;
+    }
+
     @Override
     public Optional<ObservableValue<? extends Object>> getObservableValue() {
         // TODO Auto-generated method stub

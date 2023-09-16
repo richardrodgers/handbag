@@ -48,6 +48,7 @@ import java.util.ResourceBundle;
 
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.PropertySheet;
+import org.controlsfx.control.PropertySheet.Item;
 //import org.controlsfx.control.textfield.TextFields;
 import org.controlsfx.property.editor.Editors;
 
@@ -314,6 +315,9 @@ public class Controller {
         if (resMdBox.isSelected()) {
             var reserved = getReserved();
             metadataPropertySheet.getItems().addAll(reserved);
+            curProfile = "reserved";
+        } else {
+            curProfile = "platform";
         }
 
        // repMetaButton.setOnAction(e -> repeatMetaElement());
@@ -324,7 +328,7 @@ public class Controller {
                 addedItems.add(item);
             }
             metadataPropertySheet.getItems().add(item);
-            //addMetaElement(name);
+            addMetaField.clear();
     });
         
         // log display
@@ -442,24 +446,22 @@ public class Controller {
     private void transmitBag() {
         try {
             var destAddr = destField.getText();
-            //URI destUri = new URL(destField.getText()).toURI();
             // refine test
             boolean isLocalDest = ! destAddr.startsWith("http");
-            BagBuilder builder = null;
-            if (isLocalDest) {
-                Path destDir = Paths.get(destAddr);
-                builder = new BagBuilder(destDir.resolve(bagNameField.getText()),
+            String bagName = bagNameField.getText();
+            Path dest = Paths.get(destAddr).resolve(bagName);
+            if (! isLocalDest) {
+                var tempBag = File.createTempFile(bagName, null);
+                tempBag.deleteOnExit();
+                dest = tempBag.toPath();
+            }
+            BagBuilder builder = new BagBuilder(dest,
                           Charset.forName(textEncs.getValue()),
                           EolRule.valueOf(eolRules.getValue()),
                           false,
                           chksumAlgs.getCheckModel().getCheckedIndices().stream()
                           .map(idx -> csAlgoCode(chksums.get(idx)))
                           .toList().toArray(new String[0]));
-            } else {
-                // TODO - set staging dir
-                builder = new BagBuilder();
-                showLog("Non-Local destination not implemented");
-            }
             // add payload files, tag files
             for (TreeItem<PathRef> ti : payloadTreeView.getRoot().getChildren()) {
                 fillPayload(ti, builder);
@@ -487,9 +489,9 @@ public class Controller {
                 var pkgPath = Serde.toPackage(builder.build(), pkgFmt, false, Optional.empty());
                 postPackage(destUri, pkgPath, pkgFmt);
             }
-            showLog("Bag transmitted");
+            showLog("Bag '" + bagName + "' transmitted");
             logger.logTransfer(Path.of(logField.getText()), logAppend.isSelected(),
-                               bagNameField.getText(), bagSize, destField.getText());
+                               bagName, bagSize, destField.getText());
             reset(true);
         } catch (IOException | URISyntaxException exp) {
             // test only
@@ -595,39 +597,30 @@ public class Controller {
         }
     }
 
-    // reset payload and metadata to ready state
-    private void reset(boolean keepStickies) {
+    // reset payload, metadata etc to ready state after a transmission or trashing
+    private void reset(boolean transmitted) {
         payloadTreeView.getRoot().getChildren().clear();
-        ObservableList<PropertySheet.Item> items = metadataPropertySheet.getItems();
-        List<PropertySheet.Item> saveItems = new ArrayList<>();
-        saveItems.addAll(items);
-        items.clear();
+        tagTreeView.getRoot().getChildren().clear();
+        fetchView.getItems().clear();
+        populateMetadataEditor();
+        //ObservableList<PropertySheet.Item> items = metadataPropertySheet.getItems();
+        //List<PropertySheet.Item> saveItems = new ArrayList<>();
+        //saveItems.addAll(items);
+        //items.clear();
         cleanMetadata = true;
-        boolean anyNeeded = false;
-        int i = 0;
-        /* 
-        for (MetadataSpec spec : workflowChoiceBox.getValue().getMetadata()) {
-            if (! spec.isOptional() && spec.needsValue()) {
-                anyNeeded = true;
-            }
-            MetadataItem item = new MetadataItem(spec);
-            String oldValue = (String)saveItems.get(i).getValue();
-            if (spec.isSticky() && keepStickies && oldValue != null) {
-                item.setValue(oldValue);
-                gooeyMetadata = true;
-            }
-            items.add(item);
-            i++;
-        }
-        */
-         // test only
-        metadataPropertySheet.getItems().addAll(getReserved());
-        completeMetadata = ! anyNeeded;
+        completeMetadata = ! metadataPropertySheet.getItems().stream()
+                            .anyMatch(i -> ((MetadataItem)i).getSpec().isRequired());
+        //metadataPropertySheet.getItems().addAll(getReserved());
         updateButtons();
         bagSize = 0L;
         bagSizeLabel.setText("[empty]");
         //generateBagName(workflowChoiceBox.getValue().getBagNameGenerator());
-        bagLabel.setText(bagNameField.getText());
+        if (transmitted) {
+            // retire bag name
+            bagNameField.clear();
+        }
+        var bagText = bagNameField.getText();
+        bagLabel.setText(bagText.isEmpty() ? "Bag" : bagText);
     }
 
     // load and filter by autogen status the bagit reserved elements
@@ -635,6 +628,8 @@ public class Controller {
         var result = cbuilder.merge("reserved", "classpath:/bagit-reserved-profile.json");
         if (result.success()) {
             var reserved = result.getObject().bagInfo;
+            curProfile = "reserved";
+            loadedProfiles.put(curProfile, result.getObject());
             return reserved.entrySet().stream()
                                       .filter(e -> ! "autogenerated".equals(e.getValue().getDescription()))
                                       .map(MetadataItem::new).toList();
