@@ -83,6 +83,7 @@ public class HttpAccess {
                                 .uri(destAddr)
                                 .POST(BodyPublishers.ofFile(bagPackage))
                                 .header("Content-Type", "application/" + pkgFmt)
+                                .header("Content-Length", Long.toString(bagPackage.toFile().length()))
                                 .build();
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
             if (response.statusCode() == 201) {

@@ -28,8 +28,8 @@ metadata elements), then transfer the serialized bag to a destination, follow th
 <center><h2>Table of Contents</h2></center>
 <ol>
    <li>
-      <a href="#usecase">
-         <span>Primary Use-Case</span>
+      <a href="#operation">
+         <span>Operation</span>
       </a>
    </li>
    <li>
@@ -42,21 +42,43 @@ metadata elements), then transfer the serialized bag to a destination, follow th
          <span>Payload</span>
       </a>
    </li>
+   <li>
+      <a href="#metadata">
+         <span>Metadata</span>
+      </a>
+   </li>
+   <li>
+      <a href="#tagfiles">
+         <span>Tag Files</span>
+      </a>
+   </li>
+   <li>
+      <a href="#fetch">
+         <span>Fetch Files</span>
+      </a>
+   </li>
+   <li>
+      <a href="#profile">
+         <span>BagIt Profiles</span>
+      </a>
+   </li>
 </ol>
-<h4 id="usecase">Primary Use-Case</h4>
-      <p>HandBag is a tool for selecting resources from the local (or an accessible mounted) file system to be placed
+<h4 id="operation">Operation</h4>
+<p>
+   HandBag is a tool for selecting resources from the local (or an accessible mounted) file system to be placed
    in a directory structure conforming to the BagIt specification, describing this resource set,
    and transferring/transmitting it to a local or remote destination, in a compressed package, or as a
    loose directory.
 </p>
-<p>Visually, the UI operates roughly from left to right, starting with the <em>Settings</em> tab, where you specify
-   the minimum information (name for the bag, destination) necessary for a transfer. Next, you can select
-   files from the file system, and drop them into the <em>Payload</em> tab area. Finally, the <em>Metadata</em> tab exposes
+<p>
+   Visually, the UI operates roughly from left to right, starting with the <em>Settings</em> tab, where you specify
+   the minimum information (name for the bag, destination) necessary for a transfer. Next, you can select files
+   from the file system, and drop them into the <em>Payload</em> tab area. Finally, the <em>Metadata</em> tab exposes
    a property editor where you can describe the bag. In fact, you may enter metadata or payload files in any order,
    moving back and forth across tabs.
-</p>
-   
-<p>When the bag is complete, there are just two alternative actions to perform, using the buttons to the right of the
+</p>  
+<p>
+   When the bag is complete, there are just two alternative actions to perform, using the buttons to the right of the
    tabs. You may either discard your work <em>(Trash)</em>, or press the <em>Destination</em> button to effect the transfer. Note that
    discarding the bag will <em>not</em> delete or remove any source files, so it is a safe operation. It merely clears your workspace
    to start another bag with a single button press.
@@ -75,14 +97,63 @@ metadata elements), then transfer the serialized bag to a destination, follow th
    The destination value can be either a directory in the accessible file system (hitting the
    <em>Browse</em> button brings up a directory chooser), or a URL to an Http address. In either case,
    the button label will change to <em>Clear</em>, which removes the destination. HandBag assumes there
-   may be multiple bags transmitted to the same destination in a session of the application, so this field
+   may be multiple bags transmitted to the same destination in an application session, so this field
    is not automatically cleared afer each use (as the bag name is, e.g).
 </p>
 <p>
-   The final basic config value is labelled package format, which may be one of the supported serializatons,
+   The final basic config value is labelled package format, which may be one of the supported serializations,
    or <em>none</em> for a loose directory bag. Note that unserialized bags may not be transmitted to a remote 
    web service, only to the local file system.
 </p>
 <h4 id="payload">Payload</h4>
-</body>
-</html>
+<p>
+   The payload tab displays an initially empty <em>data</em> directory tree under the root of the bag. Adding
+   files is simply accomplished by dragging the icon or name of a file (in any desktop app that lists files,
+   e.g. an explorer) to under the data folder and dropping. You may also drag a directory, which will add all 
+   the leaf node files directly under <em>data</em>, collapsing any directory sub-structure. You can, however,
+   impose any directory structure you want: simply right-click when the cursor is on a directory node, and a
+   context menu offers you the choice of creating a sub-directory ("Add folder"). The context menu is also
+   available for files, where it has an action to remove the selected file. This could be used to drag a large
+   directory, but exclude a few files from the bag. The fetch action will be discussed below. Note that the bag
+   information display to the right of the tabs reflects the current size of the bag (payload files).
+</p>
+<h4 id="metadata">Metadata</h4>
+<p>
+   Bag metadata is typically recorded in the tag file <em>bag-info.txt</em>. The <em>Metadata</em> tab
+   provides an editor to assign values to existing elements, and add new elements (fields) to the metadata set.
+   Elements have attributes (such as being required) that are respected by the editor: one cannot transmit a bag
+   with unassigned required fields. The editor also respects any installed <em>Bagit profiles</em>: it includes
+   all specified elements (and their attributes), and if a value list is provided, the editor will restrict
+   selections to the list values. Profile management is discussed below. As a convenience, above the element
+   list in the editor is a box labelled <em>search</em>: it filters elements by their label, so you can quickly
+   'zero in' on the elements you want to work with.
+</p>
+<h4 id="tagfiles">Tag Files</h4>
+<p>
+   Tag files are permitted anywhere in the bag except the payload directory (<em>data</em>). The tag file
+   tab contains a directory tree (from the bag root) where drag-and-drop operations can be performed like
+   those in the payload tab, including creating new directories and subdirectories.
+</p>
+<h4 id="fetch">Fetch Files</h4>
+<p>
+   Fetch files are payload files whose contents are not included in the bag. The fetch tab contains a ledger of
+   such files, which is recorded in the bag as <em>fetch.txt</em>. To designate a fetch file, open the context
+   menu on the flle in the payload tab, and enter a fetch URL.
+</p>
+<h4 id="profile">BagIt Profiles</h4>
+<p>
+   HandBag provides extensive support for the BagIt Profiles specification. Profiles encode capabilities and constraints
+   on bags and their metadata. A given bag may, in fact, conform to multiple profiles, if they do not conflict with each
+   other. HandBag embodies a 'stack/merge' model for profiles. All bags are subject to a base profile - known as the
+   <em>platform</em> profile, which captures the underlying capabilities of the software application and dependent libraries
+   - such as what versions of the BagIt spec are supported, what serializations can be encoded, etc. This profile is
+   not user-accessible or modifiable, since it expresses hard limits of software functionality, not user preference.
+</p>
+<p>
+   By default configuration (check-box on basic settings tab), a second profile (<em>reserved</em>) is stacked on the platform
+   with the BagIt specification 'reserved' metadata element set. Finally, using the basic settings field labeled 'profile',
+   you may add in (merge) any arbitrary profile by entering a URL or browsing in the local filesystem for a JSON-formatted document.
+   Profile documents can be reached via dereference of the URL, which is the most typical use-case.
+   If you wish to replace or discard a profile, just press the button labeled 'clear', which will 'pop' the last installed
+   profile from the stack.
+</p>
