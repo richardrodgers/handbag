@@ -62,6 +62,21 @@ metadata elements), then transfer the serialized bag to a destination, follow th
          <span>BagIt Profiles</span>
       </a>
    </li>
+   <li>
+      <a href="#workspec">
+         <span>Work Specifications</span>
+      </a>
+   </li>
+   <li>
+      <a href="#capturectx">
+         <span>Context Capture</span>
+      </a>
+   </li>
+   <li>
+      <a href="#transferlog">
+         <span>Transfer Log</span>
+      </a>
+   </li>
 </ol>
 <h4 id="operation">Operation</h4>
 <p>
@@ -121,12 +136,12 @@ metadata elements), then transfer the serialized bag to a destination, follow th
 <p>
    Bag metadata is typically recorded in the tag file <em>bag-info.txt</em>. The <em>Metadata</em> tab
    provides an editor to assign values to existing elements, and add new elements (fields) to the metadata set.
-   Elements have attributes (such as being required) that are respected by the editor: one cannot transmit a bag
-   with unassigned required fields. The editor also respects any installed <em>Bagit profiles</em>: it includes
-   all specified elements (and their attributes), and if a value list is provided, the editor will restrict
-   selections to the list values. Profile management is discussed below. As a convenience, above the element
-   list in the editor is a box labelled <em>search</em>: it filters elements by their label, so you can quickly
-   'zero in' on the elements you want to work with.
+   Elements have attributes (such as being required - indicated with an asterisk in the editor) that are respected
+   by the editor: one cannot transmit a bag with unassigned required fields. The editor also respects any installed
+   <em>Bagit profiles</em>: it includes all specified elements (and their attributes), and if a value list is provided,
+   the editor will restrict selections to the list values. Profile management is discussed below. As a convenience,
+   above the element list in the editor is a box labelled <em>search</em>: it filters elements by their label, so you 
+   can quickly 'zero in' on the elements you want to work with.
 </p>
 <h4 id="tagfiles">Tag Files</h4>
 <p>
@@ -156,4 +171,32 @@ metadata elements), then transfer the serialized bag to a destination, follow th
    Profile documents can be reached via dereference of the URL, which is the most typical use-case.
    If you wish to replace or discard a profile, just press the button labeled 'clear', which will 'pop' the last installed
    profile from the stack.
+</p>
+<h4 id="workspec">Work Specifications</h4>
+<p>
+   Profiles can essentially configure and automate bag construction through their constraint language - both encoding
+   characteristics and metadata requirements. HandBag extends these capabilities using another document:
+   the <em>work specification</em> aka workspec. The workspec describes, in a JSON-formatted document, a destination, together
+   with any configuration necessary to access it, and a set of bags to be produced for it, including a BagIt profile. This set
+   is known as a <em>job</em>, and there may be multiple jobs in a workspec. In the feature settings, simply enter or browse for
+   the work spec document, and the list of available jobs will appear in the drop-down list below it. The field is labelled
+   'Work Dispatch' because this location is expected to contain new specifications as needed (no fixed address).
+</p>
+<h4 id="capturectx">Context Capture</h4
+<p>
+   HandBag copies payload files from designated locations in a file system - what we can call the <em>source</em> location.
+   Depending on the history of treatment of source files, their location and technical metadata (like file creation time) may
+   have significance for archival or other curational practices. It may not as well - digital copies are costless and perfect,
+   so the file(s) in question could be a backup copy with original properties obliterated.  In the <em>feature</em> settings
+   there are 2 controls (default disabled) that allow you to capture source context, and record it in tag files in the bag
+   being created. The first - 'Map Payload Source Path' - will list for each payload file a path from the root of the source
+   file system in the tag file 'source-map.txt'. The second - 'Capture Payload Source Metadata' - will record file creation
+   and modification times in the tag file 'source-meta.txt'.
+</p>
+<h4 id="transferlog">Transfer Log</h4> 
+<p>
+   If configured in the features settings, HandBag can produce a log (journal) of all the bags created and transfered to any
+   destination. By checking the <em>Append</em> box, each additional transfer is added to the existing log, otherwise a new
+   (date-stamped) log is created each time, in the file labeled 'Activity Log' in settings. These logs can be attached to
+   emails (or other notification mechanisms) to provide a record for the sender or recipent (or both), using any email client.
 </p>
