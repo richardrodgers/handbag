@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 MIT Richard Rodgers
+ * Copyright 2023 Richard Rodgers
  * SPDX-Licence-Identifier: Apache-2.0
  */
 package org.modrepo.handbag.model;

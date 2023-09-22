@@ -57,8 +57,6 @@ import org.modrepo.packr.BagBuilder;
 import org.modrepo.packr.Serde;
 import org.modrepo.packr.BagBuilder.EolRule;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.modrepo.bagmatic.Bagmatic;
 import org.modrepo.bagmatic.ContextBuilder;
 import org.modrepo.bagmatic.impl.profile.BagitProfile;
@@ -118,7 +116,7 @@ public class Controller {
     private boolean cleanMetadata = true;
     private boolean completeMetadata = false;
     private long bagSize = 0L;
-    private int counter = 0;
+    private int counter = 1;
     private final Image dirIcon = new Image(getClass().getResourceAsStream("/Folder.png"));
     private final Image refIcon = new Image(getClass().getResourceAsStream("/Anchor.png"));
     private WorkSpec workSpec;
@@ -136,6 +134,11 @@ public class Controller {
 
         pkgFormats.getItems().addAll("zip", "tar", "tgz", "none");
         pkgFormats.setValue("zip");
+
+         bagNameField.setOnAction(act -> {
+            var name = bagNameField.getText();
+            bagLabel.setText(generateBagName(name.isEmpty() ? "Bag" : name));
+        });
 
         destButton.setOnAction(a -> {
             if (destField.getText() == null ||
@@ -248,8 +251,6 @@ public class Controller {
 
         //destField.setOnAction(e -> reset(false));
 
-        var bagText = bagNameField.getText();
-        bagLabel.setText(bagText.isEmpty() ? "Bag" : bagText);
         /* 
         workflowChoiceBox.addEventHandler(Act)ionEvent.ACTION, event -> {
             if (workflowChoiceBox.getItems().size() != 0) {
@@ -276,6 +277,8 @@ public class Controller {
         Image bagIm = new Image(getClass().getResourceAsStream("/Bag.png"), 90, 90, false, false);
         bagLabel.setGraphic(new ImageView(bagIm));
         bagLabel.setContentDisplay(ContentDisplay.BOTTOM);
+        var bagText = bagNameField.getText();
+        bagLabel.setText(bagText.isEmpty() ? "Bag" : generateBagName(bagText));
 
         Image sendIm = new Image(getClass().getResourceAsStream("/Cabinet.png"), 90, 90, false, false);
         sendButton.setGraphic(new ImageView(sendIm));
@@ -343,10 +346,6 @@ public class Controller {
             webEngine.loadContent(manMD, "text/html");
         } catch (Exception e) {}
     }
-
-    //private void replaceProfile(String oldProf, String newProf) {
-    //    addProfile(jobProfiles.get(newProf));
-    //}
 
     private void showLog(String entry) {
         logger.log(entry);
@@ -448,7 +447,7 @@ public class Controller {
             var destAddr = destField.getText();
             // refine test
             boolean isLocalDest = ! destAddr.startsWith("http");
-            String bagName = bagNameField.getText();
+            String bagName = bagLabel.getText();
             Path dest = Paths.get(destAddr).resolve(bagName);
             if (! isLocalDest) {
                 var tempBag = File.createTempFile(bagName, null);
@@ -510,7 +509,7 @@ public class Controller {
         } else {
             Optional<URI> location = pr.getLocation();
             if (location.isEmpty()) {
-                System.out.println("relPath: " + parent.getRelPath());
+                //System.out.println("relPath: " + parent.getRelPath());
                 if (mapPayload.isSelected()) {
                     builder.property("source-map.txt", pr.getSourcePath().toString(), makeRelPath(parent, pr));
                 }
@@ -616,11 +615,14 @@ public class Controller {
         bagSizeLabel.setText("[empty]");
         //generateBagName(workflowChoiceBox.getValue().getBagNameGenerator());
         if (transmitted) {
-            // retire bag name
-            bagNameField.clear();
+            // retire bag name if not template
+            counter++;
+            if (! bagNameField.getText().contains("$")) {
+                bagNameField.clear();
+            }
         }
         var bagText = bagNameField.getText();
-        bagLabel.setText(bagText.isEmpty() ? "Bag" : bagText);
+        bagLabel.setText(bagText.isEmpty() ? "Bag" : generateBagName(bagText));
     }
 
     // load and filter by autogen status the bagit reserved elements
@@ -749,11 +751,17 @@ public class Controller {
         return file != null;
     }
 
-    /* 
-    private void generateBagName(String generator) {
-        bagName = "transfer." + counter++;
+    private String generateBagName(String template) {
+        var today = LocalDateTime.now();
+        var curJob = activeJobBox.getSelectionModel().getSelectedItem();
+        if (curJob == null) curJob = "job";
+        return template.replace("$c", String.valueOf(counter)
+                       .replace("$y", String.valueOf(today.getYear()))
+                       .replace("$m", String.valueOf(today.getMonthValue()))
+                       .replace("$d", String.valueOf(today.getDayOfMonth()))
+                       .replace("$j", curJob)
+        );
     }
-    */
 
     private final class TextFieldTreeCellImpl extends TreeCell<PathRef> {
         private TextField textField;

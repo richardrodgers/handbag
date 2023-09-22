@@ -56,8 +56,9 @@ public class MetadataItem implements PropertySheet.Item {
         return null;
     }
 
+    @Override
     public String getName() {
-        return name;
+        return isRequired() ? "*" + name : " " + name;
     }
 
     public String getRealName() {
